@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "profile_name": "main_plc_dev_eff",
+  "wifi": {
+    "ssid": "nima",
+    "password": "nima@nima123"
+  },
+  "plc": {
+    "protocol": "modbus_tcp",
+    "host": "192.168.1.51",
+    "port": 1502,
+    "unit_id": 1
+  },
+  "poll": {
+    "interval_ms": 400
+  },
+  "tags": [
+    { "id": "Dev.T_9R.Eff", "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40035 },
+    { "id": "Dev.Z_7X.Eff", "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40037 },
+    { "id": "Dev.T_8R.Eff", "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40039 },
+    { "id": "Dev.R_F3.Eff", "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40041 },
+    { "id": "Dev.Z_8X.Eff", "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40043 },
+    { "id": "Dev.T_4F.Eff", "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40045 },
+    { "id": "Dev.C_T2.Eff", "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40047 },
+    { "id": "Dev.C_T2B.Eff", "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40049 },
+    { "id": "Dev.R_F2.Eff", "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40051 },
+    { "id": "Dev.Z_8X.Fault", "kind": "coil", "address": 6 }
+  ]
+}

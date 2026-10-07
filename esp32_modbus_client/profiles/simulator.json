@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "profile_name": "simulator",
+  "wifi": {
+    "ssid": "nima",
+    "password": "nima@nima123"
+  },
+  "plc": {
+    "protocol": "modbus_tcp",
+    "host": "192.168.1.51",
+    "port": 5020,
+    "unit_id": 1
+  },
+  "poll": {
+    "interval_ms": 1000
+  },
+  "tags": [
+    { "id": "temp", "label": "Temperature x10", "kind": "holding", "address": 0, "scale": 0.1 },
+    { "id": "weight", "label": "Weight kg", "kind": "holding", "address": 1 },
+    { "id": "pressure", "label": "Pressure x10", "kind": "holding", "address": 2, "scale": 0.1 },
+    { "id": "counter", "label": "Counter", "kind": "holding", "address": 3 },
+    { "id": "motor", "label": "Motor", "kind": "coil", "address": 0 },
+    { "id": "pump", "label": "Pump", "kind": "coil", "address": 1 },
+    { "id": "valve", "label": "Valve", "kind": "coil", "address": 2 }
+  ]
+}
