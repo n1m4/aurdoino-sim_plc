@@ -29,3 +29,19 @@
 
 #define WIFI_CONNECT_TIMEOUT_MS 30000
 #define MODBUS_TRANSACTION_TIMEOUT_MS 5000
+
+// ── MQTT ─────────────────────────────────────────────────────────────
+#define MAX_MQTT_HOST_LEN     64   // hostname / IP of broker
+#define MAX_MQTT_USER_LEN     52   // "edge-{uuid}" → max ~42 + margin
+#define MAX_MQTT_PASS_LEN     64
+#define MAX_MQTT_CLIENT_ID    36   // e.g. "ESP32-FACTORY01-001"
+#define MAX_MQTT_FACTORY_ID   40   // UUID (36) + margin
+#define MAX_MQTT_LINE_ID      16   // e.g. "01"
+#define MAX_MQTT_MACHINE_ID   32   // e.g. "machine-01"
+/** PubSubClient rx/tx buffer — must fit full MQTT packet (topic+payload). */
+#define MQTT_BUFFER_SIZE      1024
+/** Maximum JSON payload bytes inside one telemetry message.            */
+#define MQTT_JSON_MAX_LEN     900
+/** Initial reconnect wait (ms); doubles each failure up to MAX.        */
+#define MQTT_RECONNECT_MIN_MS 1000
+#define MQTT_RECONNECT_MAX_MS 60000

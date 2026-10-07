@@ -1,6 +1,6 @@
 upload
 python -m platformio run -t upload --upload-port COM5 -d E:\workspace3\aurdoino-sim_plc\esp32_modbus_client
-
+python -m platformio run -t uploadfs
 
 python -m platformio device monitor -p COM5 -b 115200 -d
 python -m platformio device monitor -p COM5 -b 115200 -d E:\workspace3\aurdoino-sim_plc\esp32_modbus_client

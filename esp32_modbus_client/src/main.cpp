@@ -4,6 +4,7 @@
 #include "board_config.h"
 #include "config_store.h"
 #include "modbus_poll.h"
+#include "mqtt_publish.h"
 #include "led_status.h"
 #include "web_config.h"
 
@@ -27,6 +28,7 @@ void setup() {
   if (g_mode == AppRunMode::Work) {
     ledStatusSetWorkMode(true);
     modbusPollBegin(g_workCfg);
+    mqttPublishBegin(g_workCfg);   // ← MQTT layer (no-op if broker empty)
     appModePrintSummary(AppRunMode::Work, &g_workCfg);
     Serial.println("LED: solid = WORK");
   } else {
@@ -54,11 +56,13 @@ void loop() {
 
   if (modbusPollCycle()) {
     modbusPollPrintValues();
+    mqttPublishTelemetry();        // ← publish immediately after a good cycle
   } else {
     Serial.println("[Poll] retry in 3s...");
     delay(3000);
   }
 
   modbusPollTask();
+  mqttPublishTask();               // ← keep PubSubClient connection alive
   delay(g_workCfg.poll_interval_ms > 0 ? g_workCfg.poll_interval_ms : 1000);
 }

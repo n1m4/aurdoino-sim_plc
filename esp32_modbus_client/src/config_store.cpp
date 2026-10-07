@@ -125,6 +125,20 @@ bool configStoreParseJson(const char *json, size_t len, GatewayConfig &cfg, char
     cfg.poll_interval_ms = poll["interval_ms"] | 1000;
   }
 
+  // ── MQTT (optional — empty broker = disabled) ──────────────────────
+  JsonObject mqtt = doc["mqtt"];
+  if (!mqtt.isNull()) {
+    copyStr(cfg.mqtt.broker,     sizeof(cfg.mqtt.broker),     mqtt["broker"]     | "");
+    cfg.mqtt.port = mqtt["port"] | 8883;
+    cfg.mqtt.tls  = mqtt["tls"]  | true;
+    copyStr(cfg.mqtt.username,   sizeof(cfg.mqtt.username),   mqtt["username"]   | "");
+    copyStr(cfg.mqtt.password,   sizeof(cfg.mqtt.password),   mqtt["password"]   | "");
+    copyStr(cfg.mqtt.client_id,  sizeof(cfg.mqtt.client_id),  mqtt["client_id"]  | "");
+    copyStr(cfg.mqtt.factory_id, sizeof(cfg.mqtt.factory_id), mqtt["factory_id"] | "");
+    copyStr(cfg.mqtt.line_id,    sizeof(cfg.mqtt.line_id),    mqtt["line_id"]    | "01");
+    copyStr(cfg.mqtt.machine_id, sizeof(cfg.mqtt.machine_id), mqtt["machine_id"] | "machine-01");
+  }
+
   JsonArray tags = doc["tags"].as<JsonArray>();
   if (tags.isNull()) {
     snprintf(errorBuf, errorBufLen, "tags array required");
@@ -175,6 +189,20 @@ bool configStoreParseJsonNoValidate(const char *json, size_t len, GatewayConfig 
   JsonObject poll = doc["poll"];
   if (!poll.isNull()) {
     cfg.poll_interval_ms = poll["interval_ms"] | 1000;
+  }
+
+  // ── MQTT (optional) ────────────────────────────────────────────────
+  JsonObject mqtt = doc["mqtt"];
+  if (!mqtt.isNull()) {
+    copyStr(cfg.mqtt.broker,     sizeof(cfg.mqtt.broker),     mqtt["broker"]     | "");
+    cfg.mqtt.port = mqtt["port"] | 8883;
+    cfg.mqtt.tls  = mqtt["tls"]  | true;
+    copyStr(cfg.mqtt.username,   sizeof(cfg.mqtt.username),   mqtt["username"]   | "");
+    copyStr(cfg.mqtt.password,   sizeof(cfg.mqtt.password),   mqtt["password"]   | "");
+    copyStr(cfg.mqtt.client_id,  sizeof(cfg.mqtt.client_id),  mqtt["client_id"]  | "");
+    copyStr(cfg.mqtt.factory_id, sizeof(cfg.mqtt.factory_id), mqtt["factory_id"] | "");
+    copyStr(cfg.mqtt.line_id,    sizeof(cfg.mqtt.line_id),    mqtt["line_id"]    | "01");
+    copyStr(cfg.mqtt.machine_id, sizeof(cfg.mqtt.machine_id), mqtt["machine_id"] | "machine-01");
   }
 
   JsonArray tags = doc["tags"].as<JsonArray>();
@@ -350,6 +378,23 @@ bool configStoreSerialize(const GatewayConfig &cfg, String &outJson, bool maskWi
 
   JsonObject poll = doc["poll"].to<JsonObject>();
   poll["interval_ms"] = cfg.poll_interval_ms;
+
+  // ── MQTT (serialized even when disabled — empty broker is ok) ───────
+  JsonObject mqtt = doc["mqtt"].to<JsonObject>();
+  mqtt["broker"]     = cfg.mqtt.broker;
+  mqtt["port"]       = cfg.mqtt.port;
+  mqtt["tls"]        = cfg.mqtt.tls;
+  mqtt["username"]   = cfg.mqtt.username;
+  // Mask password in API responses the same way WiFi password is masked
+  if (maskWifiPassword) {
+    mqtt["password"] = "********";
+  } else {
+    mqtt["password"] = cfg.mqtt.password;
+  }
+  mqtt["client_id"]  = cfg.mqtt.client_id;
+  mqtt["factory_id"] = cfg.mqtt.factory_id;
+  mqtt["line_id"]    = cfg.mqtt.line_id;
+  mqtt["machine_id"] = cfg.mqtt.machine_id;
 
   JsonArray tags = doc["tags"].to<JsonArray>();
   for (uint8_t i = 0; i < cfg.tag_count; i++) {

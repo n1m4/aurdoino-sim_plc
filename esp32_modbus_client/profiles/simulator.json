@@ -14,13 +14,25 @@
   "poll": {
     "interval_ms": 1000
   },
+  "mqtt": {
+    "_note": "Local broker for development — no TLS, port 1883. Set broker='' to disable.",
+    "broker": "192.168.1.51",
+    "port": 1883,
+    "tls": false,
+    "username": "",
+    "password": "",
+    "client_id": "ESP32-SIM-001",
+    "factory_id": "00000000-0000-0000-0000-000000000001",
+    "line_id": "01",
+    "machine_id": "plc-simulator"
+  },
   "tags": [
-    { "id": "temp", "label": "Temperature x10", "kind": "holding", "address": 0, "scale": 0.1 },
-    { "id": "weight", "label": "Weight kg", "kind": "holding", "address": 1 },
-    { "id": "pressure", "label": "Pressure x10", "kind": "holding", "address": 2, "scale": 0.1 },
-    { "id": "counter", "label": "Counter", "kind": "holding", "address": 3 },
-    { "id": "motor", "label": "Motor", "kind": "coil", "address": 0 },
-    { "id": "pump", "label": "Pump", "kind": "coil", "address": 1 },
-    { "id": "valve", "label": "Valve", "kind": "coil", "address": 2 }
+    { "id": "Sim.Temperature", "label": "Temperature",  "kind": "holding", "address": 0, "scale": 0.1 },
+    { "id": "Sim.Weight",      "label": "Weight kg",    "kind": "holding", "address": 1 },
+    { "id": "Sim.Pressure",    "label": "Pressure bar", "kind": "holding", "address": 2, "scale": 0.1 },
+    { "id": "Sim.Counter",     "label": "Counter",      "kind": "holding", "address": 3 },
+    { "id": "Sim.Motor",       "label": "Motor",        "kind": "coil",    "address": 0 },
+    { "id": "Sim.Pump",        "label": "Pump",         "kind": "coil",    "address": 1 },
+    { "id": "Sim.Valve",       "label": "Valve",        "kind": "coil",    "address": 2 }
   ]
 }

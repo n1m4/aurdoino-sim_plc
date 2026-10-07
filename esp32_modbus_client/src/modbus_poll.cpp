@@ -257,3 +257,55 @@ void modbusPollTask() {
 bool modbusPollCheckBootConfigRequest() {
   return appModeCheckBootHoldDuringRun();
 }
+
+// ── Value accessors for MQTT publisher ───────────────────────────────
+
+uint8_t modbusPollGetTagCount() {
+  return s_cfg.tag_count;
+}
+
+const char *modbusPollGetTagId(uint8_t idx) {
+  if (idx >= s_cfg.tag_count) return "";
+  return s_cfg.tags[idx].id;
+}
+
+bool modbusPollGetTagReading(uint8_t idx, TagReading &r) {
+  if (idx >= s_cfg.tag_count) return false;
+  const TagDef &td = s_cfg.tags[idx];
+  r.valid     = s_tagValid[idx];
+  r.is_bool   = false;
+  r.bool_val  = false;
+  r.float_val = 0.0f;
+
+  if (!r.valid) return true;  // caller checks r.valid
+
+  if (td.kind == TagKind::Coil) {
+    r.is_bool  = true;
+    r.bool_val = s_coilValues[idx];
+    r.float_val = s_coilValues[idx] ? 1.0f : 0.0f;
+    return true;
+  }
+
+  switch (td.data_type) {
+    case TagDataType::Bool:
+      r.is_bool   = true;
+      r.bool_val  = s_boolValues[idx];
+      r.float_val = s_boolValues[idx] ? 1.0f : 0.0f;
+      break;
+    case TagDataType::Float32:
+      r.float_val = applyScale(s_floatValues[idx], td.scale);
+      break;
+    case TagDataType::Int16:
+      r.float_val = applyScale(static_cast<float>(static_cast<int16_t>(s_int32Values[idx])), td.scale);
+      break;
+    case TagDataType::Uint16:
+      r.float_val = applyScale(static_cast<float>(s_uint16Values[idx]), td.scale);
+      break;
+    case TagDataType::Int32:
+      r.float_val = applyScale(static_cast<float>(s_int32Values[idx]), td.scale);
+      break;
+    default:
+      break;
+  }
+  return true;
+}

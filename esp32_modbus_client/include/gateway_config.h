@@ -27,6 +27,19 @@ const char *gatewayDataTypeToString(TagDataType dt);
 
 bool gatewayTagTypeIsMultiRegister(TagDataType dt);
 
+// ── MQTT publisher config (per VPS contract) ──────────────────────────
+struct MqttConfig {
+  char broker[MAX_MQTT_HOST_LEN];       // e.g. plc.khze.org
+  uint16_t port;                        // 8883 (TLS) or 1883
+  bool tls;                             // enable TLS (WiFiClientSecure)
+  char username[MAX_MQTT_USER_LEN];     // edge-{factory_uuid}
+  char password[MAX_MQTT_PASS_LEN];
+  char client_id[MAX_MQTT_CLIENT_ID];   // unique per device
+  char factory_id[MAX_MQTT_FACTORY_ID]; // UUID matching VPS DB
+  char line_id[MAX_MQTT_LINE_ID];       // "01"
+  char machine_id[MAX_MQTT_MACHINE_ID]; // machine / PLC name
+};
+
 struct GatewayConfig {
   uint8_t schema_version;
   char profile_name[MAX_PROFILE_NAME];
@@ -37,6 +50,7 @@ struct GatewayConfig {
   uint16_t plc_port;
   uint8_t plc_unit_id;
   uint32_t poll_interval_ms;
+  MqttConfig mqtt;                      // MQTT publisher — empty broker = disabled
   TagDef tags[MAX_TAGS];
   uint8_t tag_count;
 };
