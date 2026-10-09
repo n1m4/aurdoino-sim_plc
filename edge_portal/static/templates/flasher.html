@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Edge Flasher — USB</title>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+</head>
+<body>
+  <header>
+    <h1>فلش ESP32</h1>
+    <nav>
+      <a href="/">پروفایل‌ها</a>
+      <a href="/flasher">فلش USB</a>
+    </nav>
+  </header>
+  <main>
+    <p class="hint">Chrome یا Edge + HTTPS + کابل USB. Web Serial فقط روی localhost یا HTTPS کار می‌کند.</p>
+    <section class="card">
+      <label>پروفایل
+        <select id="profile_select"><option value="">— انتخاب —</option></select>
+      </label>
+      <div class="row">
+        <button type="button" id="btn_connect">اتصال USB</button>
+        <button type="button" id="btn_flash_fw" class="primary">نصب firmware v1</button>
+        <button type="button" id="btn_flash_fs">آپلود تنظیمات (LittleFS)</button>
+      </div>
+      <pre id="flash_log" class="log"></pre>
+    </section>
+  </main>
+  <script type="module" src="/static/js/flasher.js"></script>
+</body>
+</html>

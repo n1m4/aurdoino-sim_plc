@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Edge Flasher — پروفایل</title>
+  <link rel="stylesheet" href="/static/css/app.css"/>
+</head>
+<body>
+  <header>
+    <h1>Edge Flasher</h1>
+    <nav>
+      <a href="/">پروفایل‌ها</a>
+      <a href="/flasher">فلش USB</a>
+    </nav>
+  </header>
+  <main>
+    <section class="card">
+      <h2>پروفایل جدید</h2>
+      <label>نام پروفایل <input id="profile_name" type="text" placeholder="کارخانه X — edge 1"/></label>
+      <label>JSON کانفیگ
+        <textarea id="config_json" rows="16" placeholder='{"schema_version":2,...}'></textarea>
+      </label>
+      <div class="row">
+        <button type="button" id="btn_validate">اعتبارسنجی</button>
+        <button type="button" id="btn_save" class="primary">ذخیره</button>
+        <input type="file" id="file_import" accept=".json,application/json" hidden/>
+        <button type="button" id="btn_import">Import فایل</button>
+      </div>
+      <pre id="validate_out" class="log"></pre>
+    </section>
+    <section class="card">
+      <h2>پروفایل‌های ذخیره‌شده</h2>
+      <ul id="profile_list"></ul>
+    </section>
+  </main>
+  <script src="/static/js/profiles.js"></script>
+</body>
+</html>

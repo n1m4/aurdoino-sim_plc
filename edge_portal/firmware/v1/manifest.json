@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "chip": "ESP32",
+  "flashSize": "4MB",
+  "flashMode": "dio",
+  "flashFreq": "40m",
+  "comment": "Offsets for default ESP32 4MB app + littlefs. Re-run scripts/export_edge_firmware.py after PlatformIO build.",
+  "files": [
+    { "path": "bootloader.bin", "offset": 4096 },
+    { "path": "partition-table.bin", "offset": 32768 },
+    { "path": "firmware.bin", "offset": 65536 }
+  ],
+  "littlefs": {
+    "offset": 1638400,
+    "size": 458752
+  }
+}
