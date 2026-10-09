@@ -5,6 +5,7 @@
 #include "config_store.h"
 #include "modbus_poll.h"
 #include "mqtt_publish.h"
+#include "mqtt_command.h"
 #include "led_status.h"
 #include "web_config.h"
 
@@ -63,6 +64,7 @@ void loop() {
   }
 
   modbusPollTask();
-  mqttPublishTask();               // ← keep PubSubClient connection alive
+  mqttPublishTask();               // ← keep PubSubClient connection alive; fires callbacks
+  mqttCommandProcess();            // ← process any command queued by the callback above
   delay(g_workCfg.poll_interval_ms > 0 ? g_workCfg.poll_interval_ms : 1000);
 }

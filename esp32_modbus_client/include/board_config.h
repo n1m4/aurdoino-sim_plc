@@ -45,3 +45,14 @@
 /** Initial reconnect wait (ms); doubles each failure up to MAX.        */
 #define MQTT_RECONNECT_MIN_MS 1000
 #define MQTT_RECONNECT_MAX_MS 60000
+
+// ── MQTT Command (bidirectional) ──────────────────────────────────────
+#define MAX_TAG_UUID_LEN       40   // UUID(36) + NUL margin
+#define MAX_CMD_ID_LEN         40   // command_id UUID(36) + NUL
+#define CMD_DEDUP_MAX          16   // ring buffer slots for dedup
+#define CMD_DEDUP_WINDOW_MS    60000UL   // duplicate window: 60 s
+#define CMD_RESULT_TOPIC_MAX   160  // result topic = command topic + "/result"
+
+// ── Schema v2 tag fields ──────────────────────────────────────────────
+#define MAX_VPS_NAME_LEN       48   // Tag.name from VPS (MQTT telemetry key)
+#define MAX_UNIT_LEN           12   // engineering unit string (optional, informational)

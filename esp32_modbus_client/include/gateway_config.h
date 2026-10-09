@@ -7,13 +7,21 @@ enum class TagKind : uint8_t { Holding, Coil, Input, Discrete, Unknown };
 
 enum class TagDataType : uint8_t { Bool, Int16, Uint16, Int32, Float32 };
 
+/** Write access level for a tag. Default = Read (backward-compatible). */
+enum class TagAccess : uint8_t { Read, Write, ReadWrite };
+
 struct TagDef {
-  char id[MAX_TAG_ID_LEN];
+  char id[MAX_TAG_ID_LEN];           // local tag name (optional in v2, used for serial debug)
+  char vps_name[MAX_VPS_NAME_LEN];   // Tag.name on VPS — used as MQTT telemetry key
+  char unit[MAX_UNIT_LEN];           // engineering unit, e.g. "%", "°C" (informational)
+  char tag_uuid[MAX_TAG_UUID_LEN];   // UUID for command routing (empty = not commandable)
   char label[MAX_LABEL_LEN];
   TagKind kind;
   TagDataType data_type;
   uint16_t address;
   float scale;
+  float offset;                      // engineering offset: eng = raw*scale + offset
+  TagAccess access;                  // default: Read
 };
 
 /** Modbus 4xxxx display address (e.g. 40047) -> 0-based holding offset. */

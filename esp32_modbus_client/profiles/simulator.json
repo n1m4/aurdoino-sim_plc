@@ -1,6 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "profile_name": "simulator",
+  "_note": "Tag UUIDs below are for local testing only. Replace with real VPS UUIDs in production.",
   "wifi": {
     "ssid": "nima",
     "password": "nima@nima123"
@@ -15,7 +16,7 @@
     "interval_ms": 1000
   },
   "mqtt": {
-    "_note": "Local broker for development — no TLS, port 1883. Set broker='' to disable.",
+    "_note": "Local broker for development — no TLS. Set broker='' to disable.",
     "broker": "192.168.1.51",
     "port": 1883,
     "tls": false,
@@ -27,12 +28,73 @@
     "machine_id": "plc-simulator"
   },
   "tags": [
-    { "id": "Sim.Temperature", "label": "Temperature",  "kind": "holding", "address": 0, "scale": 0.1 },
-    { "id": "Sim.Weight",      "label": "Weight kg",    "kind": "holding", "address": 1 },
-    { "id": "Sim.Pressure",    "label": "Pressure bar", "kind": "holding", "address": 2, "scale": 0.1 },
-    { "id": "Sim.Counter",     "label": "Counter",      "kind": "holding", "address": 3 },
-    { "id": "Sim.Motor",       "label": "Motor",        "kind": "coil",    "address": 0 },
-    { "id": "Sim.Pump",        "label": "Pump",         "kind": "coil",    "address": 1 },
-    { "id": "Sim.Valve",       "label": "Valve",        "kind": "coil",    "address": 2 }
+    {
+      "vps_name": "Sim.Temperature",
+      "id": "Sim.Temperature",
+      "tag_uuid": "10000000-0000-0000-0000-000000000001",
+      "label": "Temperature",
+      "data_type": "uint16",
+      "address": "40001",
+      "unit": "°C×10",
+      "scale": 0.1,
+      "access": "read"
+    },
+    {
+      "vps_name": "Sim.Weight",
+      "id": "Sim.Weight",
+      "tag_uuid": "10000000-0000-0000-0000-000000000002",
+      "label": "Weight kg",
+      "data_type": "uint16",
+      "address": "40002",
+      "unit": "kg",
+      "access": "read"
+    },
+    {
+      "vps_name": "Sim.Pressure",
+      "id": "Sim.Pressure",
+      "tag_uuid": "10000000-0000-0000-0000-000000000003",
+      "label": "Pressure bar",
+      "data_type": "uint16",
+      "address": "40003",
+      "unit": "bar×10",
+      "scale": 0.1,
+      "access": "read"
+    },
+    {
+      "vps_name": "Sim.Counter",
+      "id": "Sim.Counter",
+      "tag_uuid": "10000000-0000-0000-0000-000000000004",
+      "label": "Counter",
+      "data_type": "uint16",
+      "address": "40004",
+      "access": "read"
+    },
+    {
+      "vps_name": "Sim.Motor",
+      "id": "Sim.Motor",
+      "tag_uuid": "10000000-0000-0000-0000-000000000005",
+      "label": "Motor",
+      "data_type": "bool",
+      "address": "1",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Sim.Pump",
+      "id": "Sim.Pump",
+      "tag_uuid": "10000000-0000-0000-0000-000000000006",
+      "label": "Pump",
+      "data_type": "bool",
+      "address": "2",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Sim.Valve",
+      "id": "Sim.Valve",
+      "tag_uuid": "10000000-0000-0000-0000-000000000007",
+      "label": "Valve",
+      "data_type": "bool",
+      "address": "3",
+      "access": "read_write"
+    }
   ]
 }

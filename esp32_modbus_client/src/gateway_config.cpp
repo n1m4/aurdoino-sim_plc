@@ -13,8 +13,9 @@ void gatewayConfigSetDefaults(GatewayConfig &cfg) {
   // MQTT defaults — broker empty = disabled
   cfg.mqtt.port = 8883;
   cfg.mqtt.tls  = true;
-  std::strncpy(cfg.mqtt.line_id,    "01",       sizeof(cfg.mqtt.line_id)    - 1);
+  std::strncpy(cfg.mqtt.line_id,    "01",        sizeof(cfg.mqtt.line_id)    - 1);
   std::strncpy(cfg.mqtt.machine_id, "machine-01", sizeof(cfg.mqtt.machine_id) - 1);
+  // Note: TagDef.access defaults to Read (= 0) via memset
 }
 
 uint16_t gatewayModbus4xToOffset(uint32_t modbusRef) {

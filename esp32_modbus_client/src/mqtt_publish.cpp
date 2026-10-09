@@ -29,6 +29,7 @@
 
 #include "board_config.h"
 #include "modbus_poll.h"
+#include "mqtt_command.h"   // ← command init + on-connect hooks
 
 // ── Network clients (one TLS, one plain) ─────────────────────────────
 static WiFiClientSecure s_secureClient;
@@ -77,6 +78,7 @@ static bool ensureConnected() {
   if (ok) {
     Serial.println("[MQTT] Connected");
     s_backoff = MQTT_RECONNECT_MIN_MS;
+    mqttCommandOnConnect();   // ← re-subscribe to command topic on every connect
   } else {
     Serial.printf("[MQTT] Failed rc=%d, retry in %lus\n",
                   s_mqtt->state(), (unsigned long)(s_backoff / 1000));
@@ -116,6 +118,9 @@ void mqttPublishBegin(const GatewayConfig &cfg) {
 
   // NTP — needs WiFi to be already connected
   initNtp();
+
+  // Initialise command handler with the same PubSubClient
+  mqttCommandInit(s_mqtt, s_cfg);
 
   // Print resolved topic for confirmation on serial
   char topic[128];
@@ -160,13 +165,13 @@ void mqttPublishTelemetry() {
   for (uint8_t i = 0; i < tagCount; i++) {
     TagReading r;
     if (!modbusPollGetTagReading(i, r) || !r.valid) continue;
-    const char *id = modbusPollGetTagId(i);
-    if (!id || !id[0]) continue;
+    const char *key = modbusPollGetTagMqttKey(i);  // vps_name → fallback to id
+    if (!key || !key[0]) continue;
     if (r.is_bool) {
-      tags[id] = r.bool_val;
+      tags[key] = r.bool_val;
     } else {
       // Round to 4 decimal places (matches ingest rounding)
-      tags[id] = roundf(r.float_val * 10000.0f) / 10000.0f;
+      tags[key] = roundf(r.float_val * 10000.0f) / 10000.0f;
     }
     anyValid = true;
   }

@@ -1,6 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "profile_name": "main_plc_dev_eff",
+  "_note": "On PC simulator use 127.0.0.1; ESP32 must use PC LAN IP (ipconfig), not 127.0.0.1",
   "wifi": {
     "ssid": "YOUR_WIFI_SSID",
     "password": "YOUR_WIFI_PASSWORD"
@@ -15,7 +16,6 @@
     "interval_ms": 400
   },
   "mqtt": {
-    "_note": "On PC simulator use 127.0.0.1:1502; ESP32 must use PC LAN IP (ipconfig), not 127.0.0.1",
     "broker": "plc.khze.org",
     "port": 8883,
     "tls": true,
@@ -27,15 +27,93 @@
     "machine_id": "dev-eff-plc"
   },
   "tags": [
-    { "id": "Dev.T_9R.Eff",   "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40035 },
-    { "id": "Dev.Z_7X.Eff",   "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40037 },
-    { "id": "Dev.T_8R.Eff",   "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40039 },
-    { "id": "Dev.R_F3.Eff",   "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40041 },
-    { "id": "Dev.Z_8X.Eff",   "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40043 },
-    { "id": "Dev.T_4F.Eff",   "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40045 },
-    { "id": "Dev.C_T2.Eff",   "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40047 },
-    { "id": "Dev.C_T2B.Eff",  "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40049 },
-    { "id": "Dev.R_F2.Eff",   "label": "Eff %", "kind": "holding", "datatype": "float32", "address": 40051 },
-    { "id": "Dev.Z_8X.Fault", "kind": "coil",   "address": 6 }
+    {
+      "vps_name": "Dev.T_9R.Eff",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "label": "Eff %",
+      "data_type": "float32",
+      "address": "40035",
+      "unit": "%",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dev.Z_7X.Eff",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "label": "Eff %",
+      "data_type": "float32",
+      "address": "40037",
+      "unit": "%",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dev.T_8R.Eff",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "label": "Eff %",
+      "data_type": "float32",
+      "address": "40039",
+      "unit": "%",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dev.R_F3.Eff",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "label": "Eff %",
+      "data_type": "float32",
+      "address": "40041",
+      "unit": "%",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dev.Z_8X.Eff",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "label": "Eff %",
+      "data_type": "float32",
+      "address": "40043",
+      "unit": "%",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dev.T_4F.Eff",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "label": "Eff %",
+      "data_type": "float32",
+      "address": "40045",
+      "unit": "%",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dev.C_T2.Eff",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "label": "Eff %",
+      "data_type": "float32",
+      "address": "40047",
+      "unit": "%",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dev.C_T2B.Eff",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "label": "Eff %",
+      "data_type": "float32",
+      "address": "40049",
+      "unit": "%",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dev.R_F2.Eff",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "label": "Eff %",
+      "data_type": "float32",
+      "address": "40051",
+      "unit": "%",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dev.Z_8X.Fault",
+      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "data_type": "bool",
+      "address": "6",
+      "access": "read_write"
+    }
   ]
 }

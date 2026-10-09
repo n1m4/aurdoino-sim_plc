@@ -269,6 +269,13 @@ const char *modbusPollGetTagId(uint8_t idx) {
   return s_cfg.tags[idx].id;
 }
 
+const char *modbusPollGetTagMqttKey(uint8_t idx) {
+  if (idx >= s_cfg.tag_count) return "";
+  const TagDef &td = s_cfg.tags[idx];
+  // Prefer vps_name (schema v2) — fallback to id for backward compat
+  return (td.vps_name[0]) ? td.vps_name : td.id;
+}
+
 bool modbusPollGetTagReading(uint8_t idx, TagReading &r) {
   if (idx >= s_cfg.tag_count) return false;
   const TagDef &td = s_cfg.tags[idx];
@@ -308,4 +315,136 @@ bool modbusPollGetTagReading(uint8_t idx, TagReading &r) {
       break;
   }
   return true;
+}
+
+// ── Modbus Write ──────────────────────────────────────────────────────
+
+static void encodeFloat32(float value, uint16_t &hi, uint16_t &lo) {
+  uint32_t raw;
+  memcpy(&raw, &value, sizeof(raw));
+  hi = static_cast<uint16_t>(raw >> 16);
+  lo = static_cast<uint16_t>(raw & 0xFFFFu);
+}
+
+static void encodeInt32(int32_t value, uint16_t &hi, uint16_t &lo) {
+  const uint32_t raw = static_cast<uint32_t>(value);
+  hi = static_cast<uint16_t>(raw >> 16);
+  lo = static_cast<uint16_t>(raw & 0xFFFFu);
+}
+
+const char *writeResultToString(WriteResult r) {
+  switch (r) {
+    case WriteResult::OK:               return nullptr;
+    case WriteResult::TagNotFound:      return "tag not found";
+    case WriteResult::ReadOnly:         return "tag is read-only";
+    case WriteResult::TypeNotSupported: return "unsupported tag type";
+    case WriteResult::ModbusError:      return "PLC connection error";
+    default:                            return "unknown error";
+  }
+}
+
+WriteResult modbusPollWriteTag(const char *tag_uuid, const CommandWriteValue &val) {
+  // ── Find tag by UUID ──────────────────────────────────────────────
+  int8_t found = -1;
+  for (uint8_t i = 0; i < s_cfg.tag_count; i++) {
+    if (s_cfg.tags[i].tag_uuid[0] &&
+        strcmp(s_cfg.tags[i].tag_uuid, tag_uuid) == 0) {
+      found = static_cast<int8_t>(i);
+      break;
+    }
+  }
+  if (found < 0) {
+    Serial.printf("[CMD] ERROR: tag not found (uuid=%s)\n", tag_uuid);
+    return WriteResult::TagNotFound;
+  }
+
+  const TagDef &td = s_cfg.tags[found];
+  Serial.printf("[COMMAND] Tag=%s addr=%u kind=%s dtype=%s\n",
+                td.id, td.address,
+                td.kind == TagKind::Coil    ? "coil"    : "holding",
+                td.kind == TagKind::Holding ? gatewayDataTypeToString(td.data_type) : "-");
+
+  // ── Access check ──────────────────────────────────────────────────
+  if (td.access == TagAccess::Read) {
+    Serial.printf("[CMD] ERROR: tag is read-only (%s)\n", td.id);
+    return WriteResult::ReadOnly;
+  }
+
+  // ── Ensure Modbus connected ────────────────────────────────────────
+  if (!ensureModbusConnected()) {
+    Serial.println("[CMD] ERROR: PLC disconnected");
+    return WriteResult::ModbusError;
+  }
+
+  // ── Engineering → raw conversion ──────────────────────────────────
+  // raw = (eng - offset) / scale
+  const float scale = (td.scale != 0.0f) ? td.scale : 1.0f;
+
+  Serial.printf("[COMMAND] Writing...\n");
+
+  // ── Coil ──────────────────────────────────────────────────────────
+  if (td.kind == TagKind::Coil) {
+    bool boolVal = val.is_bool ? val.bool_val : (val.num_val != 0.0);
+    uint16_t trans = s_modbus.writeCoil(s_server, td.address,
+                                         boolVal, nullptr, s_cfg.plc_unit_id);
+    if (!waitTransaction(trans, "writeCoil")) return WriteResult::ModbusError;
+    Serial.printf("[COMMAND] Write successful (coil %s = %s)\n",
+                  td.id, boolVal ? "ON" : "OFF");
+    return WriteResult::OK;
+  }
+
+  // ── Holding register ──────────────────────────────────────────────
+  if (td.kind != TagKind::Holding) return WriteResult::TypeNotSupported;
+
+  switch (td.data_type) {
+    case TagDataType::Bool: {
+      bool boolVal = val.is_bool ? val.bool_val : (val.num_val != 0.0);
+      uint16_t raw = boolVal ? 1u : 0u;
+      uint16_t trans = s_modbus.writeHreg(s_server, td.address,
+                                           raw, nullptr, s_cfg.plc_unit_id);
+      if (!waitTransaction(trans, "writeHreg(bool)")) return WriteResult::ModbusError;
+      break;
+    }
+    case TagDataType::Int16: {
+      float eng  = val.is_bool ? (val.bool_val ? 1.0f : 0.0f) : static_cast<float>(val.num_val);
+      int16_t raw = static_cast<int16_t>((eng - td.offset) / scale);
+      uint16_t trans = s_modbus.writeHreg(s_server, td.address,
+                                           static_cast<uint16_t>(raw), nullptr, s_cfg.plc_unit_id);
+      if (!waitTransaction(trans, "writeHreg(int16)")) return WriteResult::ModbusError;
+      break;
+    }
+    case TagDataType::Uint16: {
+      float eng   = val.is_bool ? (val.bool_val ? 1.0f : 0.0f) : static_cast<float>(val.num_val);
+      uint16_t raw = static_cast<uint16_t>(static_cast<uint32_t>((eng - td.offset) / scale));
+      uint16_t trans = s_modbus.writeHreg(s_server, td.address,
+                                           raw, nullptr, s_cfg.plc_unit_id);
+      if (!waitTransaction(trans, "writeHreg(uint16)")) return WriteResult::ModbusError;
+      break;
+    }
+    case TagDataType::Float32: {
+      float eng  = val.is_bool ? (val.bool_val ? 1.0f : 0.0f) : static_cast<float>(val.num_val);
+      float rawf = (eng - td.offset) / scale;
+      uint16_t buf[2];
+      encodeFloat32(rawf, buf[0], buf[1]);
+      uint16_t trans = s_modbus.writeHreg(s_server, td.address,
+                                           buf, 2, nullptr, s_cfg.plc_unit_id);
+      if (!waitTransaction(trans, "writeHreg(float32)")) return WriteResult::ModbusError;
+      break;
+    }
+    case TagDataType::Int32: {
+      float eng    = val.is_bool ? (val.bool_val ? 1.0f : 0.0f) : static_cast<float>(val.num_val);
+      int32_t raw32 = static_cast<int32_t>((eng - td.offset) / scale);
+      uint16_t buf[2];
+      encodeInt32(raw32, buf[0], buf[1]);
+      uint16_t trans = s_modbus.writeHreg(s_server, td.address,
+                                           buf, 2, nullptr, s_cfg.plc_unit_id);
+      if (!waitTransaction(trans, "writeHreg(int32)")) return WriteResult::ModbusError;
+      break;
+    }
+    default:
+      return WriteResult::TypeNotSupported;
+  }
+
+  Serial.printf("[COMMAND] Write successful (%s)\n", td.id);
+  return WriteResult::OK;
 }
