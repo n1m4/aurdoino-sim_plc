@@ -1,0 +1,72 @@
+{
+  "schema_version": 2,
+  "profile_name": "main_plc_dev_eff",
+  "wifi": {
+    "ssid": "nzp-99vx-6783",
+    "password": "12345678"
+  },
+  "plc": {
+    "protocol": "modbus_tcp",
+    "host": "192.168.199.99",
+    "port": 1502,
+    "unit_id": 1
+  },
+  "poll": {
+    "interval_ms": 400
+  },
+  "mqtt": {
+    "broker": "plc.khze.org",
+    "port": 8883,
+    "tls": true,
+    "username": "edge-8fca747f-c553-4d40-ad02-1b991c9b2bd7",
+    "password": "vboVGOIurR9MPZNC",
+    "client_id": "EDGE-LOCAL-001",
+    "factory_id": "8fca747f-c553-4d40-ad02-1b991c9b2bd7",
+    "line_id": "01",
+    "machine_id": "Main PLC"
+  },
+  "tags": [
+    {
+      "vps_name": "40001",
+      "tag_uuid": "4f4cea1c-57be-42bb-a145-53a0e918a108",
+      "data_type": "int16",
+      "address": "40001",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "40002",
+      "tag_uuid": "74b9a832-d6df-47e9-8553-f61729bd0ce6",
+      "data_type": "int16",
+      "address": "40002",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "40003",
+      "tag_uuid": "89b1f81a-4301-4047-a7f3-77aea7f77f22",
+      "data_type": "int16",
+      "address": "40003",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "40004",
+      "tag_uuid": "d59c3d79-2e92-44d3-a15a-26ecf8408a1f",
+      "data_type": "int16",
+      "address": "40004",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "40010",
+      "tag_uuid": "4916bfed-1459-430d-8fd8-e6f88e9cf52d",
+      "data_type": "int16",
+      "address": "40010",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "40011",
+      "tag_uuid": "f7ac72ab-45c3-49af-8ee5-e05c7ca38e5e",
+      "data_type": "int16",
+      "address": "40011",
+      "access": "read_write"
+    }
+  ]
+}
