@@ -31,15 +31,7 @@ void ledStatusSetWorkMode(bool workMode) {
 }
 
 void ledStatusTick() {
-  if (s_workMode) {
-    if (!s_ledOn) {
-      writeLed(true);
-    }
-    return;
-  }
-  const uint32_t now = millis();
-  if (now - s_lastToggleMs >= LED_CONFIG_BLINK_MS) {
-    s_lastToggleMs = now;
-    writeLed(!s_ledOn);
+  if (s_workMode && !s_ledOn) {
+    writeLed(true);
   }
 }

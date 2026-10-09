@@ -1,19 +1,11 @@
 #pragma once
 
-#define BOOT_PIN 0
-#define BOOT_HOLD_MS 3000
-
 /** Built-in LED on ESP32-DevKitC (change if your board differs). */
 #define STATUS_LED_PIN 2
 /** Set to 1 if LED turns on with LOW (some clones). */
 #define LED_ACTIVE_LOW 0
-#define LED_CONFIG_BLINK_MS 400
-
-#define AP_SSID "PLC-GW-Setup"
-#define AP_PASSWORD "setup1234"
 
 #define CONFIG_FILE_PATH "/config.json"
-#define CONFIG_TIMEOUT_MS (15UL * 60UL * 1000UL)
 
 #define MAX_TAGS 96
 #define MAX_READ_BLOCKS 8
@@ -39,9 +31,10 @@
 #define MAX_MQTT_LINE_ID      16   // e.g. "01"
 #define MAX_MQTT_MACHINE_ID   32   // e.g. "machine-01"
 /** PubSubClient rx/tx buffer — must fit full MQTT packet (topic+payload). */
-#define MQTT_BUFFER_SIZE      1024
-/** Maximum JSON payload bytes inside one telemetry message.            */
-#define MQTT_JSON_MAX_LEN     900
+#define MQTT_BUFFER_SIZE      4096
+/** Maximum JSON payload bytes inside one telemetry message.
+ *  ~67 tags produce about 2 KB of telemetry JSON. */
+#define MQTT_JSON_MAX_LEN     3072
 /** Initial reconnect wait (ms); doubles each failure up to MAX.        */
 #define MQTT_RECONNECT_MIN_MS 1000
 #define MQTT_RECONNECT_MAX_MS 60000

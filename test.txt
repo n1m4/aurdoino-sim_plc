@@ -2,5 +2,23 @@ upload
 python -m platformio run -t upload --upload-port COM5 -d E:\workspace3\aurdoino-sim_plc\esp32_modbus_client
 python -m platformio run -t uploadfs
 
+------------------------------------
+Monitor
 python -m platformio device monitor -p COM5 -b 115200 -d
 python -m platformio device monitor -p COM5 -b 115200 -d E:\workspace3\aurdoino-sim_plc\esp32_modbus_client
+
+------------------------------------
+add read to acl (vps)
+topic read factory/dc3539ee-14dd-43f8-bb9f-d3efe2489d9a/line/+/machine/+/command
+restart mqtt service 
+------------------------------------
+exmple acl:
+
+user edge-8fca747f-c553-4d40-ad02-1b991c9b2bd7
+topic write factory/8fca747f-c553-4d40-ad02-1b991c9b2bd7/#
+topic read factory/8fca747f-c553-4d40-ad02-1b991c9b2bd7/line/+/machine/+/command
+
+------------------------------------
+
+python -m platformio run -t upload --upload-port COM5 -d E:\workspace3\aurdoino-sim_plc\esp32_modbus_client
+python -m platformio run -t uploadfs --upload-port COM5 -d E:\workspace3\aurdoino-sim_plc\esp32_modbus_client

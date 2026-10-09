@@ -15,32 +15,29 @@
     "interval_ms": 400
   },
   "mqtt": {
-    "_note": "Leave broker empty to disable MQTT. factory_id must match VPS database UUID.",
     "broker": "plc.khze.org",
     "port": 8883,
     "tls": true,
-    "username": "edge-YOUR_FACTORY_UUID",
-    "password": "YOUR_MQTT_PASSWORD",
-    "client_id": "ESP32-FACTORY01-001",
-    "factory_id": "YOUR_FACTORY_UUID",
+    "username": "edge-8fca747f-c553-4d40-ad02-1b991c9b2bd7",
+    "password": "vboVGOIurR9MPZNC",
+    "client_id": "EDGE-LOCAL-001",
+    "factory_id": "8fca747f-c553-4d40-ad02-1b991c9b2bd7",
     "line_id": "01",
-    "machine_id": "dev-eff-plc"
+    "machine_id": "Main PLC"
   },
   "tags": [
     {
       "vps_name": "Dev.T_9R.Eff",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "1fb7dbec-5efa-4885-8134-8f67d1205588",
       "label": "Eff %",
       "data_type": "float32",
       "address": "40035",
       "unit": "%",
-      "scale": 1.0,
-      "offset": 0.0,
       "access": "read"
     },
     {
       "vps_name": "Dev.Z_7X.Eff",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "f83a5ca0-f3c8-445b-ad7c-71f8819ebbd7",
       "label": "Eff %",
       "data_type": "float32",
       "address": "40037",
@@ -49,7 +46,7 @@
     },
     {
       "vps_name": "Dev.T_8R.Eff",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "a4958395-56bc-4b7c-8a5f-a347220efde1",
       "label": "Eff %",
       "data_type": "float32",
       "address": "40039",
@@ -58,7 +55,7 @@
     },
     {
       "vps_name": "Dev.R_F3.Eff",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "8adc2432-2588-40a0-98e0-ed8519064b6d",
       "label": "Eff %",
       "data_type": "float32",
       "address": "40041",
@@ -67,7 +64,7 @@
     },
     {
       "vps_name": "Dev.Z_8X.Eff",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "c30386c1-ac07-4589-a0a0-f6baaa54e9bd",
       "label": "Eff %",
       "data_type": "float32",
       "address": "40043",
@@ -76,7 +73,7 @@
     },
     {
       "vps_name": "Dev.T_4F.Eff",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "e068ee41-0417-4065-99dd-93cea12e7ea4",
       "label": "Eff %",
       "data_type": "float32",
       "address": "40045",
@@ -85,7 +82,7 @@
     },
     {
       "vps_name": "Dev.C_T2.Eff",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "555f183b-5eae-434a-9fd4-b2264ab06625",
       "label": "Eff %",
       "data_type": "float32",
       "address": "40047",
@@ -94,7 +91,7 @@
     },
     {
       "vps_name": "Dev.C_T2B.Eff",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "a05f0f53-a8a5-460f-9fc6-17cf4ea40e49",
       "label": "Eff %",
       "data_type": "float32",
       "address": "40049",
@@ -103,7 +100,7 @@
     },
     {
       "vps_name": "Dev.R_F2.Eff",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "8e8efd3b-ba66-4d97-ae3f-0082ac96907e",
       "label": "Eff %",
       "data_type": "float32",
       "address": "40051",
@@ -112,10 +109,437 @@
     },
     {
       "vps_name": "Dev.Z_8X.Fault",
-      "tag_uuid": "REPLACE_WITH_VPS_TAG_UUID",
+      "tag_uuid": "1d6cd59a-0d86-443e-be03-ac88f39d3766",
       "data_type": "bool",
-      "address": "6",
+      "address": "00006",
       "access": "read_write"
+    },
+    {
+      "vps_name": "Bin.201.Level",
+      "tag_uuid": "e2f5ebb5-f24d-4651-8dcf-41942770630f",
+      "data_type": "float32",
+      "address": "40075",
+      "access": "read",
+      "unit": "t"
+    },
+    {
+      "vps_name": "Bin.201.Valve",
+      "tag_uuid": "b65f58ba-2ada-4e76-ac6b-50ffe39826ae",
+      "data_type": "bool",
+      "address": "00014",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Bin.202.Level",
+      "tag_uuid": "d10d13f1-e17f-472e-b688-3cbf4c88cd23",
+      "data_type": "float32",
+      "address": "40077",
+      "access": "read",
+      "unit": "t"
+    },
+    {
+      "vps_name": "Bin.202.Valve",
+      "tag_uuid": "adad25fc-0271-45a8-8436-d09d8acdd007",
+      "data_type": "bool",
+      "address": "00015",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Bin.203.Level",
+      "tag_uuid": "d308615b-1297-4bcf-9d26-3da0f8e2b214",
+      "data_type": "float32",
+      "address": "40079",
+      "access": "read",
+      "unit": "t"
+    },
+    {
+      "vps_name": "Bin.203.Valve",
+      "tag_uuid": "f92456b4-bc1f-4671-a631-61133cee0994",
+      "data_type": "bool",
+      "address": "00016",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Bin.204.Level",
+      "tag_uuid": "cb66b61a-c2bb-4436-bf05-f6395678c117",
+      "data_type": "float32",
+      "address": "40081",
+      "access": "read",
+      "unit": "t"
+    },
+    {
+      "vps_name": "Bin.204.Valve",
+      "tag_uuid": "b1e6390e-8987-4486-bb1c-9ffff6c869a8",
+      "data_type": "bool",
+      "address": "00017",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Bin.205.Level",
+      "tag_uuid": "0683ebb4-aa16-4898-921a-83cc8666d5d2",
+      "data_type": "float32",
+      "address": "40083",
+      "access": "read",
+      "unit": "t"
+    },
+    {
+      "vps_name": "Bin.205.Valve",
+      "tag_uuid": "9ac15eb5-b2ff-435c-901b-653ad832a114",
+      "data_type": "bool",
+      "address": "00018",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Bin.206.Level",
+      "tag_uuid": "fc4055ae-7df8-4c63-a7ad-d0edfe731cbe",
+      "data_type": "float32",
+      "address": "40085",
+      "access": "read",
+      "unit": "t"
+    },
+    {
+      "vps_name": "Bin.206.Valve",
+      "tag_uuid": "d0e5ab84-5d39-45dd-a792-331400c742c4",
+      "data_type": "bool",
+      "address": "00019",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Conveyor1.Running",
+      "tag_uuid": "6bf7748d-5e92-4f22-89d4-adcaa0d8e17f",
+      "data_type": "bool",
+      "address": "00005",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Devices.Pending",
+      "tag_uuid": "f9993d5a-7e9a-4935-8e6d-e036780d0f72",
+      "data_type": "float32",
+      "address": "40033",
+      "access": "read"
+    },
+    {
+      "vps_name": "Devices.Repair",
+      "tag_uuid": "f0f33b54-e692-4ad1-bbfe-3d6d8915add9",
+      "data_type": "float32",
+      "address": "40031",
+      "access": "read"
+    },
+    {
+      "vps_name": "Devices.Total",
+      "tag_uuid": "d583ad6f-d174-4a4b-aeea-0a35688aa8c0",
+      "data_type": "float32",
+      "address": "40027",
+      "access": "read"
+    },
+    {
+      "vps_name": "Devices.Working",
+      "tag_uuid": "a8f152d3-fbde-4de9-b197-0ad987d5290e",
+      "data_type": "float32",
+      "address": "40029",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dosing.SC.Run",
+      "tag_uuid": "9bfae2e3-2e52-4557-ba3c-d539dcd99ad9",
+      "data_type": "bool",
+      "address": "00022",
+      "access": "read"
+    },
+    {
+      "vps_name": "Dosing.Scale1.Weight",
+      "tag_uuid": "4594b52e-4078-4282-8f87-87aae94e4610",
+      "data_type": "float32",
+      "address": "40087",
+      "access": "read",
+      "unit": "kg"
+    },
+    {
+      "vps_name": "Intake.CC01.Current",
+      "tag_uuid": "63802912-7f94-4f78-a663-7fb695defd76",
+      "data_type": "float32",
+      "address": "40071",
+      "access": "read",
+      "unit": "A"
+    },
+    {
+      "vps_name": "Intake.CC01.Run",
+      "tag_uuid": "f77a0e49-e282-4e78-afff-b71008e04e14",
+      "data_type": "bool",
+      "address": "00011",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Intake.CC01.Speed",
+      "tag_uuid": "e7fe1ebc-76a7-442f-8575-96365fd911f5",
+      "data_type": "float32",
+      "address": "40069",
+      "access": "read",
+      "unit": "%"
+    },
+    {
+      "vps_name": "Intake.DC01.Weight",
+      "tag_uuid": "a1c4eade-de39-4d21-875c-aa65a2657c46",
+      "data_type": "float32",
+      "address": "40073",
+      "access": "read",
+      "unit": "kg"
+    },
+    {
+      "vps_name": "Intake.EL01.Current",
+      "tag_uuid": "6e5c2c00-7bad-4fda-bd4e-78e779fcb347",
+      "data_type": "float32",
+      "address": "40055",
+      "access": "read",
+      "unit": "A"
+    },
+    {
+      "vps_name": "Intake.EL01.Fault",
+      "tag_uuid": "1ca0b807-66c3-421d-9e28-78c5dfa20998",
+      "data_type": "bool",
+      "address": "00013",
+      "access": "read"
+    },
+    {
+      "vps_name": "Intake.EL01.Run",
+      "tag_uuid": "66dcea8e-bac9-40a2-8282-1c8880bbb0ca",
+      "data_type": "bool",
+      "address": "00007",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Intake.EL01.Speed",
+      "tag_uuid": "cf9997ef-d3f8-4803-810c-c14027a5699b",
+      "data_type": "float32",
+      "address": "40053",
+      "access": "read",
+      "unit": "%"
+    },
+    {
+      "vps_name": "Intake.EL02.Current",
+      "tag_uuid": "33b6e6d8-fa66-4d73-ade2-fd642f3df73e",
+      "data_type": "float32",
+      "address": "40059",
+      "access": "read",
+      "unit": "A"
+    },
+    {
+      "vps_name": "Intake.EL02.Run",
+      "tag_uuid": "ca38c57d-ef8c-4bf6-8cfc-6ab43e1b517a",
+      "data_type": "bool",
+      "address": "00008",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Intake.EL02.Speed",
+      "tag_uuid": "f7c99fcc-ea01-4042-bda3-922e2be94e97",
+      "data_type": "float32",
+      "address": "40057",
+      "access": "read",
+      "unit": "%"
+    },
+    {
+      "vps_name": "Intake.M01.Run",
+      "tag_uuid": "1e15e10e-a124-4a80-8233-b0d2d2e9ccd1",
+      "data_type": "bool",
+      "address": "00012",
+      "access": "read"
+    },
+    {
+      "vps_name": "Intake.SC01.Current",
+      "tag_uuid": "0cdc9b02-a8ea-4199-b6c0-71967dd63bc2",
+      "data_type": "float32",
+      "address": "40063",
+      "access": "read",
+      "unit": "A"
+    },
+    {
+      "vps_name": "Intake.SC01.Run",
+      "tag_uuid": "c89b1b10-6ad8-44b9-9f05-0eacdde9337f",
+      "data_type": "bool",
+      "address": "00009",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Intake.SC01.Speed",
+      "tag_uuid": "62e71dbe-8c5c-47a1-9744-b911ba2f45b6",
+      "data_type": "float32",
+      "address": "40061",
+      "access": "read",
+      "unit": "%"
+    },
+    {
+      "vps_name": "Intake.SC02.Current",
+      "tag_uuid": "dd6d1a20-ba87-4550-9fac-2ef1655077f7",
+      "data_type": "float32",
+      "address": "40067",
+      "access": "read",
+      "unit": "A"
+    },
+    {
+      "vps_name": "Intake.SC02.Run",
+      "tag_uuid": "562e64d4-3d0f-40cd-91db-175a0221aa95",
+      "data_type": "bool",
+      "address": "00010",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Intake.SC02.Speed",
+      "tag_uuid": "73cd4997-c67a-4927-ab66-33ad1d758ae4",
+      "data_type": "float32",
+      "address": "40065",
+      "access": "read",
+      "unit": "%"
+    },
+    {
+      "vps_name": "Intake.Truck.Present",
+      "tag_uuid": "ccb4dbfb-d28c-4853-bd29-689d33a0956a",
+      "data_type": "bool",
+      "address": "00020",
+      "access": "read"
+    },
+    {
+      "vps_name": "LP2.Completed",
+      "tag_uuid": "804775f9-b5f4-4fbd-a460-45a28e5bff14",
+      "data_type": "float32",
+      "address": "40019",
+      "access": "read"
+    },
+    {
+      "vps_name": "LP2.Planned",
+      "tag_uuid": "4c4284bd-74e7-4a46-ac21-0259c594f031",
+      "data_type": "float32",
+      "address": "40021",
+      "access": "read"
+    },
+    {
+      "vps_name": "LP3.Completed",
+      "tag_uuid": "a2a4188a-f6b3-4f93-ab9d-ce205b70178c",
+      "data_type": "float32",
+      "address": "40023",
+      "access": "read"
+    },
+    {
+      "vps_name": "LP3.Planned",
+      "tag_uuid": "852d2732-a6af-4afc-b707-7db6b0347fc9",
+      "data_type": "float32",
+      "address": "40025",
+      "access": "read"
+    },
+    {
+      "vps_name": "Line.OEE",
+      "tag_uuid": "84d575c2-6403-4ff3-a7d7-6b09a5633535",
+      "data_type": "float32",
+      "address": "40007",
+      "access": "read",
+      "unit": "%"
+    },
+    {
+      "vps_name": "Line.Output",
+      "tag_uuid": "388215b7-8031-4e62-a597-57b0d51af40a",
+      "data_type": "float32",
+      "address": "40009",
+      "access": "read",
+      "unit": "pcs"
+    },
+    {
+      "vps_name": "Line.Running",
+      "tag_uuid": "7eb7cea8-9755-41df-bc6f-4a6f87112ec7",
+      "data_type": "bool",
+      "address": "00004",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Outload.Flow",
+      "tag_uuid": "57a3478a-b724-450c-b00c-ce1aea9cdf29",
+      "data_type": "float32",
+      "address": "40089",
+      "access": "read",
+      "unit": "t/h"
+    },
+    {
+      "vps_name": "Outload.Truck.Present",
+      "tag_uuid": "4ebce36b-1e9e-4d07-81ae-78682292e9fb",
+      "data_type": "bool",
+      "address": "00021",
+      "access": "read"
+    },
+    {
+      "vps_name": "Plant.StaffCount",
+      "tag_uuid": "4a128b73-99e1-4876-9acc-e05a6c18ab99",
+      "data_type": "float32",
+      "address": "40015",
+      "access": "read",
+      "unit": "نفر"
+    },
+    {
+      "vps_name": "Plant.SteamQuantity",
+      "tag_uuid": "04da03db-2045-480b-a3ab-2e0c6c9aa51c",
+      "data_type": "float32",
+      "address": "40013",
+      "access": "read",
+      "unit": "t"
+    },
+    {
+      "vps_name": "Plant.Voltage",
+      "tag_uuid": "d4d529fc-ae07-47a5-95df-9d012547ae15",
+      "data_type": "float32",
+      "address": "40017",
+      "access": "read",
+      "unit": "V"
+    },
+    {
+      "vps_name": "Plant.WorkingHours",
+      "tag_uuid": "37a8e22c-bb73-4295-8815-288279464b4c",
+      "data_type": "float32",
+      "address": "40011",
+      "access": "read",
+      "unit": "h"
+    },
+    {
+      "vps_name": "Pump1.Fault",
+      "tag_uuid": "c8e8e607-9dba-4c94-9ba1-f4330c6e2f8c",
+      "data_type": "bool",
+      "address": "00003",
+      "access": "read"
+    },
+    {
+      "vps_name": "Pump1.Flow",
+      "tag_uuid": "0b1dc32b-2259-4409-a292-81566a2622e6",
+      "data_type": "float32",
+      "address": "40005",
+      "access": "read",
+      "unit": "m³/h"
+    },
+    {
+      "vps_name": "Pump1.Running",
+      "tag_uuid": "d79468d0-bbfb-4db4-b6f7-5d97bbf124fd",
+      "data_type": "bool",
+      "address": "00001",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Pump1.Start",
+      "tag_uuid": "8a3047bd-080b-46af-ac8d-4727e39275d9",
+      "data_type": "bool",
+      "address": "00002",
+      "access": "read_write"
+    },
+    {
+      "vps_name": "Tank1.Level",
+      "tag_uuid": "7cb05623-d02f-43be-9574-93b14bdbbc77",
+      "data_type": "float32",
+      "address": "40001",
+      "access": "read_write",
+      "unit": "%"
+    },
+    {
+      "vps_name": "Tank1.Temperature",
+      "tag_uuid": "b9c4f61b-8263-4e6a-bb3d-b3d99f69870b",
+      "data_type": "float32",
+      "address": "40003",
+      "access": "read",
+      "unit": "°C"
     }
   ]
 }

@@ -1,70 +1,72 @@
 #include <Arduino.h>
+#include <Preferences.h>
 
-#include "app_mode.h"
 #include "board_config.h"
 #include "config_store.h"
 #include "modbus_poll.h"
 #include "mqtt_publish.h"
 #include "mqtt_command.h"
 #include "led_status.h"
-#include "web_config.h"
 
-static AppRunMode g_mode = AppRunMode::Config;
-static GatewayConfig g_workCfg;
+static GatewayConfig g_cfg;
+
+static void clearLegacyConfigModeFlag() {
+  Preferences prefs;
+  prefs.begin("plcgw", false);
+  prefs.remove("force_cfg");
+  prefs.end();
+}
+
+static void printBootSummary(const GatewayConfig *cfg) {
+  Serial.println("MODE=WORK (LittleFS config.json only — no setup AP/UI)");
+  if (!cfg) {
+    return;
+  }
+  Serial.printf("Profile: %s | PLC: %s:%u unit=%u | tags=%u | poll=%lums\n", cfg->profile_name,
+                cfg->plc_host, cfg->plc_port, cfg->plc_unit_id, cfg->tag_count,
+                (unsigned long)cfg->poll_interval_ms);
+}
 
 void setup() {
   Serial.begin(115200);
   delay(500);
   Serial.println();
-  Serial.println("ESP32 PLC Gateway — Phase 1.5");
+  Serial.println("ESP32 PLC Gateway");
 
   if (!configStoreInit()) {
     Serial.println("LittleFS mount failed");
   }
 
+  clearLegacyConfigModeFlag();
+
   ledStatusBegin();
+  ledStatusSetWorkMode(true);
 
-  g_mode = appModeResolveAtBoot(&g_workCfg);
-
-  if (g_mode == AppRunMode::Work) {
-    ledStatusSetWorkMode(true);
-    modbusPollBegin(g_workCfg);
-    mqttPublishBegin(g_workCfg);   // ← MQTT layer (no-op if broker empty)
-    appModePrintSummary(AppRunMode::Work, &g_workCfg);
-    Serial.println("LED: solid = WORK");
-  } else {
-    ledStatusSetWorkMode(false);
-    webConfigBegin();
-    appModePrintSummary(AppRunMode::Config, nullptr);
-    Serial.println("LED: blink = CONFIG");
+  char err[160];
+  while (!configStoreLoad(g_cfg, err, sizeof(err))) {
+    Serial.printf("Config invalid (%s) — fix esp32_modbus_client/data/config.json then uploadfs\n",
+                  err);
+    delay(5000);
   }
+
+  modbusPollBegin(g_cfg);
+  mqttPublishBegin(g_cfg);
+  printBootSummary(&g_cfg);
 }
 
 void loop() {
-  if (g_mode == AppRunMode::Config) {
-    webConfigLoop();
-    ledStatusTick();
-    if (webConfigTimedOut()) {
-      Serial.println("CONFIG timeout -> reboot");
-      webConfigRebootToWork();
-    }
-    delay(10);
-    return;
-  }
-
   ledStatusTick();
-  modbusPollCheckBootConfigRequest();
 
   if (modbusPollCycle()) {
     modbusPollPrintValues();
-    mqttPublishTelemetry();        // ← publish immediately after a good cycle
+    mqttPublishTelemetry();
   } else {
     Serial.println("[Poll] retry in 3s...");
     delay(3000);
   }
 
   modbusPollTask();
-  mqttPublishTask();               // ← keep PubSubClient connection alive; fires callbacks
-  mqttCommandProcess();            // ← process any command queued by the callback above
-  delay(g_workCfg.poll_interval_ms > 0 ? g_workCfg.poll_interval_ms : 1000);
+  mqttPublishTask();
+  mqttCommandProcess();
+  delay(g_cfg.poll_interval_ms > 0 ? g_cfg.poll_interval_ms : 1000);
 }

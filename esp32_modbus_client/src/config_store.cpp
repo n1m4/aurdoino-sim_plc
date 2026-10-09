@@ -121,6 +121,10 @@ static void fillTagFromJson(TagDef &td, JsonObject t) {
   td.scale  = t["scale"]  | 0.0f;
   td.offset = t["offset"] | 0.0f;
   td.access = parseAccess(t["access"] | "read");
+
+  if (td.id[0] == '\0' && td.vps_name[0] != '\0') {
+    copyStr(td.id, sizeof(td.id), td.vps_name);
+  }
 }
 
 static bool isValidIpv4(const char *host) {
@@ -270,8 +274,8 @@ bool configStoreParseJsonNoValidate(const char *json, size_t len, GatewayConfig 
 }
 
 bool configStoreValidate(const GatewayConfig &cfg, char *errorBuf, size_t errorBufLen) {
-  if (cfg.schema_version != 1) {
-    snprintf(errorBuf, errorBufLen, "unsupported schema_version");
+  if (cfg.schema_version != 1 && cfg.schema_version != 2) {
+    snprintf(errorBuf, errorBufLen, "unsupported schema_version (use 1 or 2)");
     return false;
   }
   if (cfg.wifi_ssid[0] == '\0') {
@@ -301,8 +305,8 @@ bool configStoreValidate(const GatewayConfig &cfg, char *errorBuf, size_t errorB
 
   for (uint8_t i = 0; i < cfg.tag_count; i++) {
     const TagDef &td = cfg.tags[i];
-    if (td.id[0] == '\0') {
-      snprintf(errorBuf, errorBufLen, "tag[%u].id required", i);
+    if (td.id[0] == '\0' && td.vps_name[0] == '\0') {
+      snprintf(errorBuf, errorBufLen, "tag[%u]: id or vps_name required", i);
       return false;
     }
     for (uint8_t j = i + 1; j < cfg.tag_count; j++) {

@@ -5,7 +5,6 @@
 
 #include <cstring>
 
-#include "app_mode.h"
 #include "board_config.h"
 #include "gateway_config.h"
 #include "tag_planner.h"
@@ -252,10 +251,6 @@ void modbusPollPrintValues() {
 
 void modbusPollTask() {
   s_modbus.task();
-}
-
-bool modbusPollCheckBootConfigRequest() {
-  return appModeCheckBootHoldDuringRun();
 }
 
 // ── Value accessors for MQTT publisher ───────────────────────────────

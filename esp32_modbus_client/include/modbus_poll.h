@@ -24,8 +24,6 @@ void modbusPollPrintValues();
 
 void modbusPollTask();
 
-bool modbusPollCheckBootConfigRequest();
-
 ModbusIP &modbusPollGetClient();
 
 // ── Value accessors for MQTT publisher ────────────────────────────────
