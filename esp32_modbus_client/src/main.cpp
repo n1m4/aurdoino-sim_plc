@@ -67,6 +67,10 @@ void loop() {
 
   modbusPollTask();
   mqttPublishTask();
-  mqttCommandProcess();
+  const uint8_t handled = mqttCommandProcess();
+  if (handled > 0 || mqttCommandQueued() > 0) {
+    // Commands pending: go straight to the next pass instead of sleeping a whole poll interval
+    return;
+  }
   delay(g_cfg.poll_interval_ms > 0 ? g_cfg.poll_interval_ms : 1000);
 }

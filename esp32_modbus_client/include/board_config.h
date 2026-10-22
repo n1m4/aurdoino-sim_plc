@@ -8,7 +8,9 @@
 #define CONFIG_FILE_PATH "/config.json"
 
 #define MAX_TAGS 96
-#define MAX_READ_BLOCKS 8
+#define MAX_READ_BLOCKS 16
+/** Read two points in one Modbus request when at most this many unused registers/coils lie between them. */
+#define PLANNER_MAX_GAP 4
 #define MAX_MODBUS_READ_COUNT 125
 
 #define MAX_TAG_ID_LEN 24
@@ -42,7 +44,10 @@
 // ── MQTT Command (bidirectional) ──────────────────────────────────────
 #define MAX_TAG_UUID_LEN       40   // UUID(36) + NUL margin
 #define MAX_CMD_ID_LEN         40   // command_id UUID(36) + NUL
-#define CMD_DEDUP_MAX          16   // ring buffer slots for dedup
+#define CMD_DEDUP_MAX          64   // ring buffer slots for dedup (a work-order start sends 20-30 writes)
+#define CMD_QUEUE_MAX          48   // commands waiting to be written to the PLC (FIFO)
+#define CMD_PROCESS_BUDGET_MS  4000UL  // max time spent writing queued commands per main-loop pass
+#define MQTT_DRAIN_MAX_LOOPS   64   // max PubSubClient.loop() calls per main-loop pass while commands keep arriving
 #define CMD_DEDUP_WINDOW_MS    60000UL   // duplicate window: 60 s
 #define CMD_RESULT_TOPIC_MAX   160  // result topic = command topic + "/result"
 

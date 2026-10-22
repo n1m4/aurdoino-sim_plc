@@ -3,6 +3,7 @@
 #include <ModbusIP_ESP8266.h>
 #include <WiFi.h>
 
+#include <cmath>
 #include <cstring>
 
 #include "board_config.h"
@@ -18,6 +19,7 @@ static IPAddress s_server;
 static bool s_tagValid[MAX_TAGS];
 static bool s_boolValues[MAX_TAGS];
 static int32_t s_int32Values[MAX_TAGS];
+static uint32_t s_uint32Values[MAX_TAGS];
 static uint16_t s_uint16Values[MAX_TAGS];
 static float s_floatValues[MAX_TAGS];
 static bool s_coilValues[MAX_TAGS];
@@ -35,6 +37,10 @@ static float decodeFloat32BigEndian(uint16_t regHi, uint16_t regLo) {
 static int32_t decodeInt32BigEndian(uint16_t regHi, uint16_t regLo) {
   uint32_t raw = (static_cast<uint32_t>(regHi) << 16) | regLo;
   return static_cast<int32_t>(raw);
+}
+
+static uint32_t decodeUint32BigEndian(uint16_t regHi, uint16_t regLo) {
+  return (static_cast<uint32_t>(regHi) << 16) | regLo;
 }
 
 static bool waitTransaction(uint16_t transId, const char *label) {
@@ -102,7 +108,8 @@ static void resetTagValues() {
 static void decodeHoldingTag(uint8_t ti, const TagDef &td, const uint16_t *hregs, uint16_t idx) {
   switch (td.data_type) {
     case TagDataType::Bool:
-      s_boolValues[ti] = hregs[idx] != 0;
+      // "48310.3" tags are one bit of a register; a plain bool is "register != 0"
+      s_boolValues[ti] = td.has_bit ? (((hregs[idx] >> td.bit) & 1u) != 0) : (hregs[idx] != 0);
       s_tagValid[ti] = true;
       break;
     case TagDataType::Int16:
@@ -115,6 +122,10 @@ static void decodeHoldingTag(uint8_t ti, const TagDef &td, const uint16_t *hregs
       break;
     case TagDataType::Int32:
       s_int32Values[ti] = decodeInt32BigEndian(hregs[idx], hregs[idx + 1]);
+      s_tagValid[ti] = true;
+      break;
+    case TagDataType::Uint32:
+      s_uint32Values[ti] = decodeUint32BigEndian(hregs[idx], hregs[idx + 1]);
       s_tagValid[ti] = true;
       break;
     case TagDataType::Float32:
@@ -238,6 +249,9 @@ void modbusPollPrintValues() {
         Serial.printf("%s=%.0f\n", td.id, v);
         break;
       }
+      case TagDataType::Uint32:
+        Serial.printf("%s=%lu\n", td.id, static_cast<unsigned long>(s_uint32Values[i]));
+        break;
       case TagDataType::Float32:
         Serial.printf("%s=%.4f\n", td.id, applyScale(s_floatValues[i], td.scale));
         break;
@@ -278,8 +292,11 @@ bool modbusPollGetTagReading(uint8_t idx, TagReading &r) {
   r.is_bool   = false;
   r.bool_val  = false;
   r.float_val = 0.0f;
+  r.is_int    = false;
+  r.int_val   = 0;
 
   if (!r.valid) return true;  // caller checks r.valid
+  const bool unscaled = (td.scale == 0.0f || td.scale == 1.0f);
 
   if (td.kind == TagKind::Coil) {
     r.is_bool  = true;
@@ -299,12 +316,23 @@ bool modbusPollGetTagReading(uint8_t idx, TagReading &r) {
       break;
     case TagDataType::Int16:
       r.float_val = applyScale(static_cast<float>(static_cast<int16_t>(s_int32Values[idx])), td.scale);
+      r.is_int = unscaled;
+      r.int_val = static_cast<int16_t>(s_int32Values[idx]);
       break;
     case TagDataType::Uint16:
       r.float_val = applyScale(static_cast<float>(s_uint16Values[idx]), td.scale);
+      r.is_int = unscaled;
+      r.int_val = s_uint16Values[idx];
       break;
     case TagDataType::Int32:
       r.float_val = applyScale(static_cast<float>(s_int32Values[idx]), td.scale);
+      r.is_int = unscaled;
+      r.int_val = s_int32Values[idx];
+      break;
+    case TagDataType::Uint32:
+      r.float_val = applyScale(static_cast<float>(s_uint32Values[idx]), td.scale);
+      r.is_int = unscaled;
+      r.int_val = s_uint32Values[idx];
       break;
     default:
       break;
@@ -372,8 +400,11 @@ WriteResult modbusPollWriteTag(const char *tag_uuid, const CommandWriteValue &va
   }
 
   // ── Engineering → raw conversion ──────────────────────────────────
-  // raw = (eng - offset) / scale
-  const float scale = (td.scale != 0.0f) ? td.scale : 1.0f;
+  // raw = (eng - offset) / scale, done in double: a float has 24 bits of precision and would
+  // turn an order number like 140500001 into 140500000.
+  const double scale = (td.scale != 0.0f) ? static_cast<double>(td.scale) : 1.0;
+  const double eng = val.is_bool ? (val.bool_val ? 1.0 : 0.0) : val.num_val;
+  const double rawd = (eng - static_cast<double>(td.offset)) / scale;
 
   Serial.printf("[COMMAND] Writing...\n");
 
@@ -395,30 +426,38 @@ WriteResult modbusPollWriteTag(const char *tag_uuid, const CommandWriteValue &va
     case TagDataType::Bool: {
       bool boolVal = val.is_bool ? val.bool_val : (val.num_val != 0.0);
       uint16_t raw = boolVal ? 1u : 0u;
+      if (td.has_bit) {
+        // One bit of a shared register: read it, change only that bit, write it back
+        uint16_t rtrans = s_modbus.readHreg(s_server, td.address, s_hregReadBuf, 1, nullptr,
+                                            s_cfg.plc_unit_id);
+        if (!waitTransaction(rtrans, "readHreg(bit)")) return WriteResult::ModbusError;
+        const uint16_t mask = static_cast<uint16_t>(1u << td.bit);
+        raw = boolVal ? static_cast<uint16_t>(s_hregReadBuf[0] | mask)
+                      : static_cast<uint16_t>(s_hregReadBuf[0] & ~mask);
+      }
       uint16_t trans = s_modbus.writeHreg(s_server, td.address,
                                            raw, nullptr, s_cfg.plc_unit_id);
       if (!waitTransaction(trans, "writeHreg(bool)")) return WriteResult::ModbusError;
       break;
     }
     case TagDataType::Int16: {
-      float eng  = val.is_bool ? (val.bool_val ? 1.0f : 0.0f) : static_cast<float>(val.num_val);
-      int16_t raw = static_cast<int16_t>((eng - td.offset) / scale);
+      const double r = std::fmax(-32768.0, std::fmin(32767.0, std::round(rawd)));
+      const int16_t raw = static_cast<int16_t>(r);
       uint16_t trans = s_modbus.writeHreg(s_server, td.address,
                                            static_cast<uint16_t>(raw), nullptr, s_cfg.plc_unit_id);
       if (!waitTransaction(trans, "writeHreg(int16)")) return WriteResult::ModbusError;
       break;
     }
     case TagDataType::Uint16: {
-      float eng   = val.is_bool ? (val.bool_val ? 1.0f : 0.0f) : static_cast<float>(val.num_val);
-      uint16_t raw = static_cast<uint16_t>(static_cast<uint32_t>((eng - td.offset) / scale));
+      const double r = std::fmax(0.0, std::fmin(65535.0, std::round(rawd)));
+      const uint16_t raw = static_cast<uint16_t>(r);
       uint16_t trans = s_modbus.writeHreg(s_server, td.address,
                                            raw, nullptr, s_cfg.plc_unit_id);
       if (!waitTransaction(trans, "writeHreg(uint16)")) return WriteResult::ModbusError;
       break;
     }
     case TagDataType::Float32: {
-      float eng  = val.is_bool ? (val.bool_val ? 1.0f : 0.0f) : static_cast<float>(val.num_val);
-      float rawf = (eng - td.offset) / scale;
+      float rawf = static_cast<float>(rawd);
       uint16_t buf[2];
       encodeFloat32(rawf, buf[0], buf[1]);
       uint16_t trans = s_modbus.writeHreg(s_server, td.address,
@@ -427,13 +466,24 @@ WriteResult modbusPollWriteTag(const char *tag_uuid, const CommandWriteValue &va
       break;
     }
     case TagDataType::Int32: {
-      float eng    = val.is_bool ? (val.bool_val ? 1.0f : 0.0f) : static_cast<float>(val.num_val);
-      int32_t raw32 = static_cast<int32_t>((eng - td.offset) / scale);
+      const double r = std::fmax(-2147483648.0, std::fmin(2147483647.0, std::round(rawd)));
+      const int32_t raw32 = static_cast<int32_t>(r);
       uint16_t buf[2];
       encodeInt32(raw32, buf[0], buf[1]);
       uint16_t trans = s_modbus.writeHreg(s_server, td.address,
                                            buf, 2, nullptr, s_cfg.plc_unit_id);
       if (!waitTransaction(trans, "writeHreg(int32)")) return WriteResult::ModbusError;
+      break;
+    }
+    case TagDataType::Uint32: {
+      const double r = std::fmax(0.0, std::fmin(4294967295.0, std::round(rawd)));
+      const uint32_t raw32 = static_cast<uint32_t>(r);
+      uint16_t buf[2];
+      buf[0] = static_cast<uint16_t>(raw32 >> 16);
+      buf[1] = static_cast<uint16_t>(raw32 & 0xFFFFu);
+      uint16_t trans = s_modbus.writeHreg(s_server, td.address,
+                                           buf, 2, nullptr, s_cfg.plc_unit_id);
+      if (!waitTransaction(trans, "writeHreg(uint32)")) return WriteResult::ModbusError;
       break;
     }
     default:

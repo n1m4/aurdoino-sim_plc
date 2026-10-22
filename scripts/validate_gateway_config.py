@@ -8,8 +8,9 @@ import sys
 from pathlib import Path
 
 MAX_TAGS = 96
-MAX_READ_BLOCKS = 8
+MAX_READ_BLOCKS = 16
 MAX_MODBUS_READ = 125
+PLANNER_MAX_GAP = 4
 IMPLEMENTED_KINDS = {"holding", "coil"}
 
 
@@ -23,12 +24,13 @@ def register_span(tag: dict) -> int:
     dt = tag.get("datatype") or tag.get("data_type") or "uint16"
     if tag.get("kind") != "holding":
         return 1
-    if dt in ("int32", "float32"):
+    if dt in ("int32", "uint32", "float32"):
         return 2
     return 1
 
 
 def merge_blocks(addresses: list[int]) -> list[tuple[int, int]]:
+    """Same packing as the firmware planner: unique addresses, small gaps bridged (PLANNER_MAX_GAP)."""
     if not addresses:
         return []
     addresses = sorted(set(addresses))
@@ -36,7 +38,7 @@ def merge_blocks(addresses: list[int]) -> list[tuple[int, int]]:
     start = addresses[0]
     end = addresses[0]
     for addr in addresses[1:]:
-        if addr == end + 1 and (addr - start + 1) <= MAX_MODBUS_READ:
+        if (addr - end - 1) <= PLANNER_MAX_GAP and (addr - start + 1) <= MAX_MODBUS_READ:
             end = addr
             continue
         blocks.append((start, end - start + 1))

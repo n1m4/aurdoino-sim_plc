@@ -6,9 +6,10 @@ import ipaddress
 from typing import Any
 
 MAX_TAGS = 96
-MAX_READ_BLOCKS = 8
+MAX_READ_BLOCKS = 16
 MAX_MODBUS_READ = 125
-IMPLEMENTED_DT = {"bool", "int16", "uint16", "int32", "float32"}
+PLANNER_MAX_GAP = 4
+IMPLEMENTED_DT = {"bool", "int16", "uint16", "int32", "uint32", "float32"}
 
 
 def modbus_4x_to_offset(raw: int) -> int:
@@ -18,11 +19,21 @@ def modbus_4x_to_offset(raw: int) -> int:
 
 
 def parse_address(raw: Any) -> int:
+    """Register number; a bit suffix ("48310.3") is allowed and ignored here (see parse_bit)."""
     if isinstance(raw, int):
         return raw
     if isinstance(raw, str):
-        return int(raw.strip() or "0")
+        return int(raw.strip().split(".")[0] or "0")
     raise ValueError("invalid address")
+
+
+def parse_bit(raw: Any) -> int | None:
+    """Bit index of a "48310.3" style address, or None."""
+    if isinstance(raw, str) and "." in raw:
+        part = raw.strip().split(".", 1)[1]
+        if part.isdigit():
+            return int(part)
+    return None
 
 
 def infer_kind(tag: dict[str, Any], raw_addr: int, data_type: str) -> str:
@@ -39,7 +50,7 @@ def infer_kind(tag: dict[str, Any], raw_addr: int, data_type: str) -> str:
 def register_span(kind: str, data_type: str) -> int:
     if kind == "coil":
         return 1
-    if data_type in ("int32", "float32"):
+    if data_type in ("int32", "uint32", "float32"):
         return 2
     return 1
 
@@ -53,6 +64,7 @@ def to_modbus_offset(kind: str, raw: int, data_type: str) -> int:
 
 
 def merge_blocks(addresses: list[int]) -> list[tuple[int, int]]:
+    """Same packing as the firmware planner: unique addresses, small gaps bridged (PLANNER_MAX_GAP)."""
     if not addresses:
         return []
     addresses = sorted(set(addresses))
@@ -60,7 +72,7 @@ def merge_blocks(addresses: list[int]) -> list[tuple[int, int]]:
     start = addresses[0]
     end = addresses[0]
     for addr in addresses[1:]:
-        if addr == end + 1 and (addr - start + 1) <= MAX_MODBUS_READ:
+        if (addr - end - 1) <= PLANNER_MAX_GAP and (addr - start + 1) <= MAX_MODBUS_READ:
             end = addr
             continue
         blocks.append((start, end - start + 1))
@@ -133,6 +145,11 @@ def validate_config(data: dict[str, Any]) -> list[str]:
             raw = parse_address(t.get("address", 0))
         except ValueError:
             errors.append(f"tag {key}: invalid address")
+            continue
+
+        bit = parse_bit(t.get("address", 0))
+        if bit is not None and (dt != "bool" or not (0 <= bit <= 15)):
+            errors.append(f"tag {key}: a bit address (x.N, N=0..15) is only valid for a bool holding tag")
             continue
 
         kind = infer_kind(t, raw, dt)

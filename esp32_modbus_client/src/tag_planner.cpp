@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "board_config.h"
 #include "gateway_config.h"
 
 static uint16_t s_holdingRegs[MAX_TAGS * 2];
@@ -24,6 +25,52 @@ static bool appendBlock(ReadBlock *blocks, uint8_t *count, TagKind kind, uint16_
   return true;
 }
 
+/** Insertion sort + drop duplicates (several bit tags can share one register). Returns the new length. */
+static uint16_t sortUnique(uint16_t *v, uint16_t n) {
+  for (uint16_t i = 1; i < n; i++) {
+    uint16_t key = v[i];
+    int j = i - 1;
+    while (j >= 0 && v[j] > key) {
+      v[j + 1] = v[j];
+      j--;
+    }
+    v[j + 1] = key;
+  }
+  uint16_t out = 0;
+  for (uint16_t i = 0; i < n; i++) {
+    if (out == 0 || v[i] != v[out - 1]) {
+      v[out++] = v[i];
+    }
+  }
+  return out;
+}
+
+/**
+ * Sorted, unique addresses -> read blocks. Two points share a block when at most PLANNER_MAX_GAP unused
+ * addresses lie between them and the block stays within MAX_MODBUS_READ_COUNT.
+ */
+static bool packBlocks(const uint16_t *v, uint16_t n, TagKind kind, ReadBlock *blocks, uint8_t *count,
+                       char *errorBuf, size_t errorBufLen) {
+  if (n == 0) {
+    return true;
+  }
+  uint16_t blockStart = v[0];
+  uint16_t blockEnd = v[0];
+  for (uint16_t i = 1; i < n; i++) {
+    const uint16_t gap = v[i] - blockEnd - 1;
+    if (gap <= PLANNER_MAX_GAP && (v[i] - blockStart + 1) <= MAX_MODBUS_READ_COUNT) {
+      blockEnd = v[i];
+      continue;
+    }
+    if (!appendBlock(blocks, count, kind, blockStart, blockEnd - blockStart + 1, errorBuf, errorBufLen)) {
+      return false;
+    }
+    blockStart = v[i];
+    blockEnd = v[i];
+  }
+  return appendBlock(blocks, count, kind, blockStart, blockEnd - blockStart + 1, errorBuf, errorBufLen);
+}
+
 static bool buildHoldingBlocks(const GatewayConfig &cfg, ReadBlock *blocks, uint8_t *count,
                                char *errorBuf, size_t errorBufLen) {
   uint16_t n = 0;
@@ -43,78 +90,20 @@ static bool buildHoldingBlocks(const GatewayConfig &cfg, ReadBlock *blocks, uint
     }
   }
 
-  if (n == 0) {
-    return true;
-  }
-
-  for (uint16_t i = 1; i < n; i++) {
-    uint16_t key = s_holdingRegs[i];
-    int j = i - 1;
-    while (j >= 0 && s_holdingRegs[j] > key) {
-      s_holdingRegs[j + 1] = s_holdingRegs[j];
-      j--;
-    }
-    s_holdingRegs[j + 1] = key;
-  }
-
-  uint16_t blockStart = s_holdingRegs[0];
-  uint16_t blockEnd = s_holdingRegs[0];
-  for (uint16_t i = 1; i < n; i++) {
-    if (s_holdingRegs[i] == blockEnd + 1 &&
-        (s_holdingRegs[i] - blockStart + 1) <= MAX_MODBUS_READ_COUNT) {
-      blockEnd = s_holdingRegs[i];
-      continue;
-    }
-    if (!appendBlock(blocks, count, TagKind::Holding, blockStart, blockEnd - blockStart + 1,
-                     errorBuf, errorBufLen)) {
-      return false;
-    }
-    blockStart = s_holdingRegs[i];
-    blockEnd = s_holdingRegs[i];
-  }
-  return appendBlock(blocks, count, TagKind::Holding, blockStart, blockEnd - blockStart + 1,
-                     errorBuf, errorBufLen);
+  n = sortUnique(s_holdingRegs, n);
+  return packBlocks(s_holdingRegs, n, TagKind::Holding, blocks, count, errorBuf, errorBufLen);
 }
 
 static bool buildCoilBlocks(const GatewayConfig &cfg, ReadBlock *blocks, uint8_t *count,
                             char *errorBuf, size_t errorBufLen) {
-  uint8_t n = 0;
+  uint16_t n = 0;
   for (uint8_t i = 0; i < cfg.tag_count; i++) {
     if (cfg.tags[i].kind == TagKind::Coil) {
       s_coilAddrs[n++] = cfg.tags[i].address;
     }
   }
-  if (n == 0) {
-    return true;
-  }
-
-  for (uint8_t i = 1; i < n; i++) {
-    uint16_t key = s_coilAddrs[i];
-    int j = i - 1;
-    while (j >= 0 && s_coilAddrs[j] > key) {
-      s_coilAddrs[j + 1] = s_coilAddrs[j];
-      j--;
-    }
-    s_coilAddrs[j + 1] = key;
-  }
-
-  uint16_t blockStart = s_coilAddrs[0];
-  uint16_t blockEnd = s_coilAddrs[0];
-  for (uint8_t i = 1; i < n; i++) {
-    if (s_coilAddrs[i] == blockEnd + 1 &&
-        (s_coilAddrs[i] - blockStart + 1) <= MAX_MODBUS_READ_COUNT) {
-      blockEnd = s_coilAddrs[i];
-      continue;
-    }
-    if (!appendBlock(blocks, count, TagKind::Coil, blockStart, blockEnd - blockStart + 1, errorBuf,
-                     errorBufLen)) {
-      return false;
-    }
-    blockStart = s_coilAddrs[i];
-    blockEnd = s_coilAddrs[i];
-  }
-  return appendBlock(blocks, count, TagKind::Coil, blockStart, blockEnd - blockStart + 1, errorBuf,
-                     errorBufLen);
+  n = sortUnique(s_coilAddrs, n);
+  return packBlocks(s_coilAddrs, n, TagKind::Coil, blocks, count, errorBuf, errorBufLen);
 }
 
 bool tagPlannerBuild(const GatewayConfig &cfg, ReadBlock *blocks, uint8_t *blockCountOut,

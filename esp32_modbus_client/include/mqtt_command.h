@@ -13,6 +13,7 @@
  *  2. Missing required field             → silent drop
  *  3. factory mismatch                   → silent drop
  *  4. Duplicate command_id (60s window)  → silent drop
+ *  4b. Queue full (CMD_QUEUE_MAX)        → silent drop (log only)
  *  5. Command expired                    → result ok=false, error="command expired"
  *  6. Tag not found / read-only / error  → result ok=false, error=<string>
  *  7. Modbus Write OK                    → result ok=true
@@ -35,8 +36,13 @@ void mqttCommandInit(PubSubClient *client, const MqttConfig &cfg);
 void mqttCommandOnConnect();
 
 /**
- * Process one queued command (if any).
- * Call this in the main loop AFTER mqttPublishTask() so the callback
- * has already had a chance to queue a command during s_mqtt->loop().
+ * Write every queued command to the PLC, in the order received, and publish a result for each.
+ * Call this in the main loop AFTER mqttPublishTask() so the callback has already had a chance to
+ * queue commands during s_mqtt->loop(). A work-order start sends 20-30 writes in a row, so this
+ * handles the whole queue (bounded by a time budget; the rest waits for the next pass).
+ * Returns how many commands were handled.
  */
-void mqttCommandProcess();
+uint8_t mqttCommandProcess();
+
+/** Number of commands waiting for mqttCommandProcess(). */
+uint8_t mqttCommandQueued();

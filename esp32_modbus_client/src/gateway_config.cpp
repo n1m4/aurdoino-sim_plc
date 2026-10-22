@@ -26,7 +26,7 @@ uint16_t gatewayModbus4xToOffset(uint32_t modbusRef) {
 }
 
 bool gatewayTagTypeIsMultiRegister(TagDataType dt) {
-  return dt == TagDataType::Int32 || dt == TagDataType::Float32;
+  return dt == TagDataType::Int32 || dt == TagDataType::Uint32 || dt == TagDataType::Float32;
 }
 
 uint16_t gatewayTagRegisterSpan(const TagDef &tag) {
@@ -55,6 +55,9 @@ TagDataType gatewayParseDataType(const char *s) {
   if (strcmp(s, "int32") == 0) {
     return TagDataType::Int32;
   }
+  if (strcmp(s, "uint32") == 0) {
+    return TagDataType::Uint32;
+  }
   if (strcmp(s, "float32") == 0) {
     return TagDataType::Float32;
   }
@@ -71,6 +74,8 @@ const char *gatewayDataTypeToString(TagDataType dt) {
       return "uint16";
     case TagDataType::Int32:
       return "int32";
+    case TagDataType::Uint32:
+      return "uint32";
     case TagDataType::Float32:
       return "float32";
     default:

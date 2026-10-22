@@ -169,6 +169,8 @@ void mqttPublishTelemetry() {
     if (!key || !key[0]) continue;
     if (r.is_bool) {
       tags[key] = r.bool_val;
+    } else if (r.is_int) {
+      tags[key] = static_cast<long long>(r.int_val);  // exact (order numbers, counters)
     } else {
       // Round to 4 decimal places (matches ingest rounding)
       tags[key] = roundf(r.float_val * 10000.0f) / 10000.0f;
@@ -208,8 +210,13 @@ void mqttPublishTelemetry() {
 }
 
 void mqttPublishTask() {
-  if (s_enabled && s_mqtt && s_mqtt->connected()) {
+  if (!(s_enabled && s_mqtt && s_mqtt->connected())) return;
+  // PubSubClient reads one packet per loop(). A command burst (20-30 messages) would otherwise take
+  // one main-loop pass each, so keep reading while new commands keep arriving.
+  for (uint8_t i = 0; i < MQTT_DRAIN_MAX_LOOPS; i++) {
+    const uint8_t before = mqttCommandQueued();
     s_mqtt->loop();
+    if (!s_mqtt->connected() || mqttCommandQueued() == before) break;
   }
 }
 

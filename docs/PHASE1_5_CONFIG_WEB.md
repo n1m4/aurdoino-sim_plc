@@ -16,9 +16,9 @@
 | `plc.host` | IPv4 PC/PLC |
 | `plc.port` | معمولاً 5020 برای simulator |
 | `plc.unit_id` | 1 |
-| `tags[]` | `id`, `kind` (holding/coil), `datatype` (bool/int16/uint16/int32/float32), `address` (4xxxx for holding), optional `scale`, `label` |
+| `tags[]` | `id`, `kind` (holding/coil), `datatype` (bool/int16/uint16/int32/uint32/float32), `address` (4xxxx for holding), optional `scale`, `label` |
 
-`int32` و `float32` هر کدام **۲ register** (Big-Endian، word بالا اول). `bool` روی holding = register غیرصفر.
+`int32` و `uint32` و `float32` هر کدام **۲ register** (Big-Endian، word بالا اول). `bool` روی holding = register غیرصفر.
 
 محدودیت: 64 تگ، 8 بلوک read، هر بلوک ≤ 125 register/coil.
 

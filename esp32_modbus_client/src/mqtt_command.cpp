@@ -74,7 +74,10 @@ static void dedupAdd(const char *cmd_id) {
   s_dedupHead = (s_dedupHead + 1) % CMD_DEDUP_MAX;
 }
 
-// ── Pending command (single-slot queue) ──────────────────────────────
+// ── Pending commands (FIFO queue) ─────────────────────────────────────
+// Commands arrive in bursts (a work-order start writes 20-30 tags). Each one is queued by the MQTT
+// callback and written to the PLC later from the main loop, strictly in the order received: the last
+// command of a burst is usually the "data ready" flag and must reach the PLC after the values.
 struct PendingCmd {
   bool   active;
   char   cmd_id[MAX_CMD_ID_LEN];
@@ -86,7 +89,24 @@ struct PendingCmd {
   double value_num;
   uint64_t expires_at_ms;
 };
-static PendingCmd s_pending;
+static PendingCmd s_queue[CMD_QUEUE_MAX];
+static uint8_t    s_qHead  = 0;   // next to process
+static uint8_t    s_qCount = 0;
+
+static bool queuePush(const PendingCmd &c) {
+  if (s_qCount >= CMD_QUEUE_MAX) return false;
+  s_queue[(s_qHead + s_qCount) % CMD_QUEUE_MAX] = c;
+  s_qCount++;
+  return true;
+}
+
+static bool queuePop(PendingCmd &out) {
+  if (s_qCount == 0) return false;
+  out = s_queue[s_qHead];
+  s_qHead = (s_qHead + 1) % CMD_QUEUE_MAX;
+  s_qCount--;
+  return true;
+}
 
 // ── Current UTC time in milliseconds (0 if NTP not synced) ───────────
 static uint64_t nowMs() {
@@ -209,7 +229,6 @@ static void commandCallback(char *topic, byte *raw, unsigned int len) {
     Serial.printf("[CMD] Duplicate command_id=%s — drop\n", cmd_id);
     return;
   }
-  dedupAdd(cmd_id);
 
   // ── Build result topic ─────────────────────────────────────────────
   char result_topic[CMD_RESULT_TOPIC_MAX];
@@ -231,25 +250,25 @@ static void commandCallback(char *topic, byte *raw, unsigned int len) {
   Serial.printf("[MQTT] value=%s\n",
     value_is_bool ? (value_bool ? "true" : "false") : "(numeric)");
 
-  // ── Queue pending command ──────────────────────────────────────────
-  s_pending.active = true;
+  // ── Queue the command (FIFO) ───────────────────────────────────────
+  PendingCmd c;
+  memset(&c, 0, sizeof(c));
+  c.active = true;
+  strncpy(c.cmd_id,       cmd_id,       MAX_CMD_ID_LEN        - 1);
+  strncpy(c.factory,      factory,      MAX_MQTT_FACTORY_ID   - 1);
+  strncpy(c.tag_id,       tag_id,       MAX_TAG_UUID_LEN      - 1);
+  strncpy(c.result_topic, result_topic, CMD_RESULT_TOPIC_MAX  - 1);
+  c.expires_at_ms = expires_at;
+  c.value_is_bool = value_is_bool;
+  c.value_bool    = value_bool;
+  c.value_num     = value_num;
 
-  strncpy(s_pending.cmd_id,       cmd_id,       MAX_CMD_ID_LEN        - 1);
-  s_pending.cmd_id[MAX_CMD_ID_LEN - 1] = '\0';
-
-  strncpy(s_pending.factory,      factory,      MAX_MQTT_FACTORY_ID   - 1);
-  s_pending.factory[MAX_MQTT_FACTORY_ID - 1] = '\0';
-
-  strncpy(s_pending.tag_id,       tag_id,       MAX_TAG_UUID_LEN      - 1);
-  s_pending.tag_id[MAX_TAG_UUID_LEN - 1] = '\0';
-
-  strncpy(s_pending.result_topic, result_topic, CMD_RESULT_TOPIC_MAX  - 1);
-  s_pending.result_topic[CMD_RESULT_TOPIC_MAX - 1] = '\0';
-
-  s_pending.expires_at_ms = expires_at;
-  s_pending.value_is_bool = value_is_bool;
-  s_pending.value_bool    = value_bool;
-  s_pending.value_num     = value_num;
+  if (!queuePush(c)) {
+    // Not remembered in the dedup ring, so a resend by the VPS can still be accepted later
+    Serial.printf("[CMD] Queue full (%u) — command_id=%s dropped\n", (unsigned)CMD_QUEUE_MAX, cmd_id);
+    return;
+  }
+  dedupAdd(cmd_id);
 }
 
 // ── Public API ────────────────────────────────────────────────────────
@@ -258,8 +277,10 @@ void mqttCommandInit(PubSubClient *client, const MqttConfig &cfg) {
   s_client = client;
   s_cfg    = cfg;
   s_inited = true;
-  memset(&s_pending, 0, sizeof(s_pending));
-  memset(s_dedup,    0, sizeof(s_dedup));
+  memset(s_queue, 0, sizeof(s_queue));
+  s_qHead = 0;
+  s_qCount = 0;
+  memset(s_dedup, 0, sizeof(s_dedup));
   s_dedupHead = 0;
   client->setCallback(commandCallback);
 }
@@ -279,18 +300,18 @@ void mqttCommandOnConnect() {
   }
 }
 
-void mqttCommandProcess() {
-  if (!s_inited || !s_pending.active) return;
-  s_pending.active = false;
+uint8_t mqttCommandQueued() {
+  return s_qCount;
+}
 
+/** Handle one command: expiry check, Modbus write, result. */
+static void processOne(const PendingCmd &cmd) {
   // ── 5. Expiry check ───────────────────────────────────────────────
   const uint64_t now = nowMs();
-  if (now > 0 && now > s_pending.expires_at_ms) {
+  if (now > 0 && now > cmd.expires_at_ms) {
     Serial.println("[CMD] ERROR: command expired");
-    publishResult(s_pending.result_topic, s_pending.cmd_id, s_pending.factory,
-                  s_pending.tag_id,
-                  /*ok=*/false, "command expired",
-                  false, false, 0.0);
+    publishResult(cmd.result_topic, cmd.cmd_id, cmd.factory, cmd.tag_id,
+                  /*ok=*/false, "command expired", false, false, 0.0);
     return;
   }
 
@@ -298,23 +319,33 @@ void mqttCommandProcess() {
   Serial.printf("[COMMAND] Resolving tag...\n");
 
   CommandWriteValue wval;
-  wval.is_bool  = s_pending.value_is_bool;
-  wval.bool_val = s_pending.value_bool;
-  wval.num_val  = s_pending.value_num;
+  wval.is_bool  = cmd.value_is_bool;
+  wval.bool_val = cmd.value_bool;
+  wval.num_val  = cmd.value_num;
 
-  const WriteResult wr  = modbusPollWriteTag(s_pending.tag_id, wval);
+  const WriteResult wr  = modbusPollWriteTag(cmd.tag_id, wval);
   const char       *err = writeResultToString(wr);
 
   if (wr == WriteResult::OK) {
-    publishResult(s_pending.result_topic, s_pending.cmd_id, s_pending.factory,
-                  s_pending.tag_id,
-                  /*ok=*/true, nullptr,
-                  s_pending.value_is_bool, s_pending.value_bool, s_pending.value_num);
+    publishResult(cmd.result_topic, cmd.cmd_id, cmd.factory, cmd.tag_id,
+                  /*ok=*/true, nullptr, cmd.value_is_bool, cmd.value_bool, cmd.value_num);
   } else {
     Serial.printf("[CMD] ERROR: %s\n", err);
-    publishResult(s_pending.result_topic, s_pending.cmd_id, s_pending.factory,
-                  s_pending.tag_id,
-                  /*ok=*/false, err,
-                  false, false, 0.0);
+    publishResult(cmd.result_topic, cmd.cmd_id, cmd.factory, cmd.tag_id,
+                  /*ok=*/false, err, false, false, 0.0);
   }
+}
+
+uint8_t mqttCommandProcess() {
+  if (!s_inited) return 0;
+  uint8_t handled = 0;
+  const uint32_t t0 = millis();
+  PendingCmd cmd;
+  // Keep the order; stop after CMD_PROCESS_BUDGET_MS so telemetry and the MQTT keep-alive are not starved
+  while (queuePop(cmd)) {
+    processOne(cmd);
+    handled++;
+    if (millis() - t0 > CMD_PROCESS_BUDGET_MS) break;
+  }
+  return handled;
 }

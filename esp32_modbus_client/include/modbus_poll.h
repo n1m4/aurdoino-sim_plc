@@ -10,6 +10,9 @@ struct TagReading {
   bool is_bool;     // true for Coil / Bool holding register
   bool bool_val;    // valid only when is_bool == true
   float float_val;  // numeric value (scale already applied)
+  // Integer tags with no scaling keep their exact value: a float32 cannot hold 140500001 (order number)
+  bool is_int;      // true -> publish int_val instead of float_val
+  int64_t int_val;
 };
 
 class ModbusIP;

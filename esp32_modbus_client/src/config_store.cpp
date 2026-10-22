@@ -83,12 +83,18 @@ static void fillTagFromJson(TagDef &td, JsonObject t) {
 
   // address: accept both number (v1) and string (v2 / VPS export)
   uint32_t rawAddr = 0;
+  int bitIndex = -1;  // "48310.3" -> single bit 3 of register 48310
   if (t["address"].is<uint32_t>()) {
     rawAddr = t["address"].as<uint32_t>();
   } else if (t["address"].is<long>()) {
     rawAddr = static_cast<uint32_t>(t["address"].as<long>());
   } else if (t["address"].is<const char *>()) {
-    rawAddr = static_cast<uint32_t>(atol(t["address"].as<const char *>()));
+    const char *addrStr = t["address"].as<const char *>();
+    rawAddr = static_cast<uint32_t>(atol(addrStr));
+    const char *dot = strchr(addrStr, '.');
+    if (dot && dot[1] >= '0' && dot[1] <= '9') {
+      bitIndex = atoi(dot + 1);
+    }
   }
 
   // kind: explicit field (v1 compat) or inferred from address/data_type (v2)
@@ -116,6 +122,12 @@ static void fillTagFromJson(TagDef &td, JsonObject t) {
     td.address = static_cast<uint16_t>(rawAddr - 1);
   } else {
     td.address = static_cast<uint16_t>(rawAddr);
+  }
+
+  // A bit address only means something for a bool on a holding register
+  if (bitIndex >= 0 && bitIndex <= 15 && td.kind == TagKind::Holding && td.data_type == TagDataType::Bool) {
+    td.has_bit = true;
+    td.bit = static_cast<uint8_t>(bitIndex);
   }
 
   td.scale  = t["scale"]  | 0.0f;
@@ -330,6 +342,7 @@ bool configStoreValidate(const GatewayConfig &cfg, char *errorBuf, size_t errorB
       case TagDataType::Int16:
       case TagDataType::Uint16:
       case TagDataType::Int32:
+      case TagDataType::Uint32:
       case TagDataType::Float32:
         break;
       default:
@@ -468,7 +481,12 @@ bool configStoreSerialize(const GatewayConfig &cfg, String &outJson, bool maskWi
       t["unit"] = td.unit;
     }
     t["kind"] = kindToString(td.kind);
-    if (td.kind == TagKind::Holding) {
+    if (td.kind == TagKind::Holding && td.has_bit) {
+      char addrBuf[16];
+      snprintf(addrBuf, sizeof(addrBuf), "%u.%u", static_cast<unsigned>(td.address) + 40001u,
+               static_cast<unsigned>(td.bit));
+      t["address"] = addrBuf;  // ArduinoJson copies the string
+    } else if (td.kind == TagKind::Holding) {
       t["address"] = td.address + 40001;
     } else if (td.kind == TagKind::Coil) {
       t["address"] = td.address + 1;

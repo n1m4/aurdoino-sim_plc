@@ -5,7 +5,8 @@
 
 enum class TagKind : uint8_t { Holding, Coil, Input, Discrete, Unknown };
 
-enum class TagDataType : uint8_t { Bool, Int16, Uint16, Int32, Float32 };
+// Uint32 is appended (not inserted) so existing numeric values never change.
+enum class TagDataType : uint8_t { Bool, Int16, Uint16, Int32, Float32, Uint32 };
 
 /** Write access level for a tag. Default = Read (backward-compatible). */
 enum class TagAccess : uint8_t { Read, Write, ReadWrite };
@@ -22,6 +23,8 @@ struct TagDef {
   float scale;
   float offset;                      // engineering offset: eng = raw*scale + offset
   TagAccess access;                  // default: Read
+  bool has_bit;                      // address written as "48310.3": a single bit of a holding register
+  uint8_t bit;                       // 0..15, valid when has_bit (data_type must be Bool)
 };
 
 /** Modbus 4xxxx display address (e.g. 40047) -> 0-based holding offset. */
